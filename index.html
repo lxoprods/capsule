@@ -236,7 +236,8 @@
     transform:translateY(100%);transition:transform .34s cubic-bezier(.2,.85,.25,1);
     background:radial-gradient(700px 460px at 50% 0%,rgba(226,98,15,.12),transparent 62%),var(--bg)}
   #nowplaying.show{transform:translateY(0)}
-  .fp-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;padding-top:max(16px,env(safe-area-inset-top))}
+  .fp-grab{width:40px;height:5px;border-radius:99px;background:var(--line);margin:10px auto 0;flex:none}
+  .fp-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 18px 8px;padding-top:max(8px,env(safe-area-inset-top))}
   .fp-eyebrow{font-family:"Space Mono",monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .fp-icon{width:40px;height:40px;flex:none;border-radius:12px;border:none;background:var(--surface);color:var(--text);display:grid;place-items:center;cursor:pointer}
   .fp-icon:hover{background:var(--surface-2)}
@@ -530,6 +531,7 @@
 
 <!-- Lecteur plein écran -->
 <div id="nowplaying">
+  <div class="fp-grab"></div>
   <div class="fp-top">
     <button class="fp-icon" id="fpClose" aria-label="Réduire"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
     <span class="fp-eyebrow" id="fpProject">En lecture</span>
@@ -1096,6 +1098,23 @@ $("#npCover").onclick=openNowPlaying;
 $("#npTitleWrap").onclick=openNowPlaying;
 $("#npArtist").onclick=openNowPlaying;
 $("#fpClose").onclick=closeNowPlaying;
+/* glisser vers le bas pour fermer le plein écran */
+(function(){
+  const np=$("#nowplaying");let sy=0,sx=0,dy=0,drag=false,decided=false;
+  np.addEventListener("touchstart",e=>{if(!np.classList.contains("show"))return;
+    const t=e.touches[0];sy=t.clientY;sx=t.clientX;dy=0;drag=false;decided=false;},{passive:true});
+  np.addEventListener("touchmove",e=>{if(!np.classList.contains("show"))return;
+    const t=e.touches[0],ddy=t.clientY-sy,ddx=t.clientX-sx;
+    if(!decided&&(Math.abs(ddy)>8||Math.abs(ddx)>8)){decided=true;
+      drag=(ddy>0&&Math.abs(ddy)>Math.abs(ddx)&&e.target.id!=="fpWave");}
+    if(drag){dy=Math.max(0,ddy);np.style.transition="none";np.style.transform="translateY("+dy+"px)";
+      np.style.opacity=String(Math.max(.4,1-dy/700));e.preventDefault();}
+  },{passive:false});
+  np.addEventListener("touchend",()=>{if(!drag)return;np.style.transition="";np.style.opacity="";
+    if(dy>110){np.style.transform="translateY(100%)";setTimeout(()=>{np.classList.remove("show");np.style.transform="";},320);}
+    else{np.style.transform="";}
+    drag=false;});
+})();
 $("#fpShare").onclick=()=>{closeNowPlaying();if(current)openShare(proj(current.projectId));};
 $("#fpDownload").onclick=()=>{if(current)downloadTrack(current);};
 
