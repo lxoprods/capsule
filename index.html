@@ -950,9 +950,8 @@ function trackRow(t,i,ctx,showProj){
 function bindRows(ctx,sortable){
   $$(".trow").forEach(row=>{
     const id=row.dataset.id,t=state.tracks.find(x=>x.id===id);
-    const openIt=async()=>{await playInContext(t,ctx);if(innerWidth<=720)openNowPlaying();};
-    row.querySelector(".tinfo").onclick=openIt;
-    row.querySelector(".tnum").onclick=openIt;
+    row.querySelector(".tinfo").onclick=()=>playInContext(t,ctx);
+    row.querySelector(".tnum").onclick=()=>playInContext(t,ctx);
     row.querySelector(".tmenu").onclick=e=>{e.stopPropagation();openTrackMenu(e.currentTarget,t,ctx);};
     const st=row.querySelector(".tstar");if(st)st.onclick=e=>{e.stopPropagation();toggleFav(t);};
     if(sortable)bindDrag(row);else row.draggable=false;
@@ -1676,9 +1675,8 @@ function renderPublic(){
   const pa=$("#pubAdd");if(pa)pa.onclick=()=>openSheet(publicProject.id);
   document.querySelectorAll(".pub-trow").forEach(row=>{
     const id=row.dataset.id,t=publicTracks.find(x=>x.id===id);
-    const openIt=async()=>{await playPublic(t);if(innerWidth<=720)openNowPlaying();};
-    row.querySelector(".tinfo").onclick=openIt;
-    row.querySelector(".tnum").onclick=openIt;
+    row.querySelector(".tinfo").onclick=()=>playPublic(t);
+    row.querySelector(".tnum").onclick=()=>playPublic(t);
     const dl=row.querySelector(".pub-dl");if(dl)dl.onclick=e=>{e.stopPropagation();downloadTrack(t);};
   });
 }
