@@ -75,6 +75,7 @@
     transition:background .15s}
   .pitem:hover{background:var(--surface)}
   .pitem.active{background:var(--surface)}
+  .pitem.drop-hi{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--accent-soft)}
   .pcover{width:36px;height:36px;border-radius:8px;flex:none;background-size:cover;background-position:center;
     box-shadow:0 2px 6px rgba(0,0,0,.4)}
   .pitem .nm{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
@@ -654,6 +655,16 @@
   </div>
 </div>
 
+<div class="sheet" id="moveSheet">
+  <div class="sheet-in">
+    <h3>Déplacer / copier</h3>
+    <p class="sub" id="moveTrackName"></p>
+    <div class="field"><label for="moveTarget">Vers le projet</label><select id="moveTarget"></select></div>
+    <button class="btn" id="moveBtn">Déplacer ici</button>
+    <button class="btn ghost" id="copyBtn">Copier ici</button>
+  </div>
+</div>
+
 <div class="sheet" id="profileSheet">
   <div class="sheet-in">
     <h3>Mon profil</h3>
@@ -720,6 +731,7 @@
 <div class="toast" id="toast"></div>
 <audio id="audio"></audio>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
@@ -812,6 +824,11 @@ function renderLib(){
     el.innerHTML=`<div class="pcover" style="background-image:${coverBg(p)}"></div>
       <div class="nm">${esc(p.name)}</div><div class="ct">${n}</div>`;
     el.onclick=()=>{openProject(p.id);closeDrawer();};
+    // déposer une track sur un projet -> déplacer/copier
+    el.addEventListener("dragover",e=>{if(dragId){e.preventDefault();el.classList.add("drop-hi");}});
+    el.addEventListener("dragleave",()=>el.classList.remove("drop-hi"));
+    el.addEventListener("drop",e=>{if(!dragId)return;e.preventDefault();el.classList.remove("drop-hi");
+      const t=state.tracks.find(x=>x.id===dragId);if(t&&t.projectId!==p.id)openMove(t,p.id);});
     lib.appendChild(el);
   });
 }
@@ -942,6 +959,7 @@ function renderProject(){
           <button class="playbig" id="playProject" ${tracks.length?"":"disabled style=opacity:.4"}><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
           <button class="addbtn" id="addTracks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter des tracks</button>
           <button class="addbtn" id="editProject" title="Renommer / pochette / supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Modifier</button>
+          <button class="addbtn" id="zipProject" title="Télécharger tout le projet en ZIP" ${tracks.length?"":"disabled style=opacity:.4"}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg>ZIP</button>
         </div>
       </div>
     </div>`;
@@ -955,6 +973,7 @@ function renderProject(){
   $("#editCover").onclick=()=>{projEdit=p;$("#coverInput").click();};
   $("#addTracks").onclick=()=>openSheet(p.id);
   $("#editProject").onclick=()=>openProjSheet(p);
+  {const zb=$("#zipProject");if(zb)zb.onclick=()=>downloadProjectZip(p);}
   const pb=$("#playProject");if(pb&&tracks.length)pb.onclick=()=>playInContext(tracks[0],tracks);
   bindRows(tracks,true);
 }
@@ -1217,7 +1236,8 @@ const IC={rename:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
   starOn:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 18.9 6.1 21l1.2-6.5L2.5 9.9 9.1 9z"/></svg>`,
   note:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12l-4 4H4z"/><path d="M14 20v-4h4"/></svg>`,
   dl:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg>`,
-  layers:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg>`};
+  layers:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg>`,
+  move:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9l-2-2M20 12l-2-2-2 2M9 12H20M4 17h9l-2 2"/></svg>`};
 function openTrackMenu(anchor,t,ctx){
   const items=[
     {icon:IC.play,label:"Lire",act:()=>playInContext(t,ctx)},
@@ -1225,6 +1245,7 @@ function openTrackMenu(anchor,t,ctx){
     {icon:IC.note,label:t.notes?"Modifier la note":"Ajouter une note",act:()=>openNote(t)},
     {icon:IC.layers,label:"Versions",act:()=>openVersions(t)},
     {icon:IC.rename,label:"Renommer",act:()=>openRename(t)},
+    {icon:IC.move,label:"Déplacer / copier…",act:()=>openMove(t)},
     {icon:IC.dl,label:"Télécharger",act:()=>downloadTrack(t)},
     {sep:true},
     {icon:IC.up,label:"Monter",act:()=>moveTrack(t,-1)},
@@ -1243,6 +1264,66 @@ async function downloadTrack(t){
     setTimeout(()=>URL.revokeObjectURL(u),5000);toast("Téléchargement…");
   }catch(e){window.open(url,"_blank");}
 }
+function safeName(s){return String(s||"").replace(/[\\/:*?"<>|]+/g,"_").trim()||"sans-nom";}
+/* télécharger tout un projet en ZIP */
+async function downloadProjectZip(p){
+  if(typeof JSZip==="undefined"){toast("ZIP indisponible (recharge la page)");return;}
+  const tr=orderedTracks(p.id);if(!tr.length){toast("Projet vide");return;}
+  const hud=$("#uploadHud");hud.classList.add("show");
+  try{
+    const zip=new JSZip();const used={};let done=0;
+    for(const t of tr){
+      $("#hudCount").textContent=`ZIP ${done+1}/${tr.length}`;$("#hudFile").textContent=t.title;
+      $("#hudBar").style.width=Math.round(done/tr.length*100)+"%";
+      const url=await urlFor(t);if(url){try{const b=await(await fetch(url)).blob();
+        const ext=(t.storage_path&&t.storage_path.split(".").pop())||"mp3";
+        let nm=safeName(t.title)+"."+ext,i=2;while(used[nm]){nm=safeName(t.title)+" ("+i+")."+ext;i++;}used[nm]=1;
+        zip.file(nm,b);}catch(e){}}
+      done++;$("#hudBar").style.width=Math.round(done/tr.length*100)+"%";
+    }
+    $("#hudCount").textContent="Compression…";$("#hudFile").textContent="";
+    const blob=await zip.generateAsync({type:"blob"},m=>{$("#hudBar").style.width=Math.round(m.percent)+"%";});
+    const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=safeName(p.name)+".zip";
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),8000);
+    toast("ZIP téléchargé ✓");
+  }catch(err){toast("Erreur ZIP : "+(err.message||err));}
+  finally{setTimeout(()=>hud.classList.remove("show"),500);}
+}
+/* déplacer / copier une track vers un autre projet */
+let moveCtx=null;
+function openMove(t,presetPid){
+  moveCtx=t;$("#moveTrackName").textContent=t.title;
+  const sel=$("#moveTarget");sel.innerHTML="";
+  state.projects.filter(pp=>pp.id!==t.projectId).forEach(pp=>{const o=document.createElement("option");o.value=pp.id;o.textContent=pp.name;if(pp.id===presetPid)o.selected=true;sel.appendChild(o);});
+  if(!sel.children.length){toast("Crée un autre projet d'abord");return;}
+  openSheetEl("moveSheet");
+}
+async function moveOrCopy(mode){
+  if(!moveCtx)return;const t=moveCtx,target=$("#moveTarget").value;if(!target)return;
+  const btn=mode==="move"?$("#moveBtn"):$("#copyBtn");btn.disabled=true;
+  try{
+    const maxo=Math.max(-1,...state.tracks.filter(x=>x.projectId===target).map(x=>x.order??0));
+    if(mode==="move"){
+      const {error}=await sb.from("tracks").update({project_id:target,position:maxo+1}).eq("id",t.id);
+      if(error)throw error;
+      t.projectId=target;t.order=maxo+1;
+    }else{
+      const newId=uuid(),ext=(t.storage_path&&t.storage_path.split(".").pop())||"mp3",newPath=`${user.id}/${newId}.${ext}`;
+      if(t.storage_path){const cp=await sb.storage.from("audio").copy(t.storage_path,newPath);if(cp.error)throw cp.error;}
+      const row={id:newId,user_id:user.id,project_id:target,title:t.title,storage_path:t.storage_path?newPath:null,
+        duration:t.dur,bpm:t.bpm,music_key:t.key,peaks:t.peaks,size:t.size,position:maxo+1,notes:t.notes||"",favorite:false};
+      const ins=await sb.from("tracks").insert(row).select().single();if(ins.error)throw ins.error;
+      const vid=uuid();await sb.from("track_versions").insert({id:vid,track_id:newId,user_id:user.id,name:"v1",storage_path:newPath,duration:t.dur,peaks:t.peaks,size:t.size,position:0});
+      await sb.from("tracks").update({active_version_id:vid}).eq("id",newId);
+      const nt=mapTrack(ins.data);nt.active_version_id=vid;state.tracks.push(nt);
+    }
+    closeSheets();render();
+    toast(mode==="move"?"Track déplacée ✓":"Track copiée ✓");moveCtx=null;
+  }catch(err){toast("Erreur : "+(err.message||err));}
+  finally{btn.disabled=false;}
+}
+$("#moveBtn").onclick=()=>moveOrCopy("move");
+$("#copyBtn").onclick=()=>moveOrCopy("copy");
 /* notes */
 let noteCtx=null;
 function openNote(t){noteCtx=t;$("#noteText").value=t.notes||"";openSheetEl("noteSheet");setTimeout(()=>$("#noteText").focus(),120);}
