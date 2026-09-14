@@ -907,7 +907,7 @@ function mapMixup(r){return {id:r.id,name:r.name,order:r.position||0,projectId:r
   date:r.created_at?new Date(r.created_at).getTime():Date.now()};}
 function mapMxVer(r){return {id:r.id,mixupId:r.mixup_id,name:r.name,storage_path:r.storage_path,
   dur:Number(r.duration)||0,peaks:(r.peaks&&r.peaks.length)?r.peaks:seededPeaks(r.id),
-  rms:Number(r.rms)||0.1,size:r.size||0,order:r.position||0};}
+  rms:(r.rms!=null?Number(r.rms):null),size:r.size||0,order:r.position||0};}
 async function loadAll(){
   const [pr,tr,mx]=await Promise.all([
     sb.from("projects").select("*").order("position",{ascending:true}),
@@ -1070,6 +1070,10 @@ const MXBARS=440;   // waveform très détaillée pour la comparaison
 function fmtExt(path){const e=((path||"").split(".").pop()||"").toLowerCase();
   const map={mp3:"MP3",wav:"WAV",m4a:"M4A",aac:"AAC",aif:"AIFF",aiff:"AIFF",flac:"FLAC",ogg:"OGG",opus:"OPUS"};
   return map[e]||(e?e.toUpperCase():"");}
+function lufsFromRms(rms){if(!rms||rms<=0)return null;return -0.691+20*Math.log10(rms);}
+function fmtLufs(rms){const v=lufsFromRms(rms);if(v==null)return "";return (v>=-0.05?"0.0":v.toFixed(1))+" LUFS";}
+function mxVerMeta(v){const ext=fmtExt(v.storage_path);const lu=v.rms?fmtLufs(v.rms):"";
+  return fmt(v.dur)+(ext?" · "+ext:"")+(lu?" · "+lu:"");}
 function mxGuessName(filename){
   const base=(filename||"").replace(/\.[^.]+$/,"");let m;
   if(/(^|[^a-z])map([^a-z]|$)/i.test(base))return "Map";
@@ -1126,7 +1130,7 @@ async function openMixup(id){
   state.mixupSel=id;state.view="mixup";mxTeardown();
   render();$("#main").scrollTop=0;
   await mxLoad(id);
-  if(state.view==="mixup"&&state.mixupSel===id)renderMixup();
+  if(state.view==="mixup"&&state.mixupSel===id){renderMixup();mxEnsureLoudness();}
 }
 async function mxLoad(id){
   mxVersions=[];mxComments=[];
@@ -1163,7 +1167,7 @@ function renderMixup(){
       <div class="mxversions" id="mxVerRow">
         ${mxVersions.map((v,i)=>`<div class="mxver${i===mxActive?" active":""}" data-i="${i}">
           <div class="vkey">${String.fromCharCode(65+i)}</div>
-          <div><div class="vlabel">${esc(v.name)}</div><div class="vdur">${fmt(v.dur)}${fmtExt(v.storage_path)?" · "+fmtExt(v.storage_path):""}</div></div>
+          <div><div class="vlabel">${esc(v.name)}</div><div class="vdur">${mxVerMeta(v)}</div></div>
           <button class="vmenu" aria-label="Options version"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
         </div>`).join("")}
         <button class="mxver mxaddver" id="mxAddVer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Version</button>
@@ -1279,6 +1283,22 @@ function mxSeekFromEvent(e){const wrap=$("#mxWaveWrap");const r=wrap.getBounding
   mxEls.forEach(a=>{try{a.currentTime=p*d;}catch(e){}});mxDrawWave();mxUpdateTimeUI();}
 function mxUpdateTimeUI(){const el=$("#mxTime");if(!el)return;const d=mxDur||mxVersions[mxActive]?.dur||0;
   el.textContent=`${fmt(mxCurrentTime())} / ${fmt(d)}`;const at=$("#mxAtTime");if(at)at.textContent="à "+fmt(mxCurrentTime());}
+function mxUpdateChipMeta(){$$("#mxVerRow .mxver[data-i]").forEach(el=>{
+  const v=mxVersions[+el.dataset.i];const d=el.querySelector(".vdur");if(v&&d)d.textContent=mxVerMeta(v);});}
+async function mxEnsureLoudness(){
+  let changed=false;
+  for(const v of mxVersions){
+    if(v.rms&&v.rms>0)continue;                 // déjà mesuré
+    try{
+      const {data}=sb.storage.from("audio").getPublicUrl(v.storage_path);
+      if(!data||!data.publicUrl)continue;
+      const ab=await (await fetch(data.publicUrl)).arrayBuffer();
+      const {rms}=await decodePeaksRMS(ab);
+      if(rms&&rms>0){v.rms=rms;changed=true;sb.from("mixup_versions").update({rms}).eq("id",v.id).then(()=>{},()=>{});}
+    }catch(e){/* CORS / réseau : on ignore, le LUFS restera masqué */}
+  }
+  if(changed)mxUpdateChipMeta();
+}
 function mxDrawWave(){
   const c=$("#mxWave");if(!c||!c.getContext)return;
   const peaks=(wavePeaksMx&&wavePeaksMx.length)?wavePeaksMx:(mxVersions[mxActive]?.peaks||[]);
@@ -1500,8 +1520,7 @@ async function mixupFromTrack(t){
     if(t.storage_path){
       const ext=(t.storage_path.split(".").pop()||"mp3");const vid=uuid();const path=`${user.id}/mx_${vid}.${ext}`;
       const cp=await sb.storage.from("audio").copy(t.storage_path,path);if(cp.error)throw cp.error;
-      const rms=0.1;
-      await sb.from("mixup_versions").insert({id:vid,mixup_id:m.id,user_id:user.id,name:(t.title||"Version")+" (actuel)",storage_path:path,duration:t.dur,peaks:t.peaks,rms,size:t.size||0,position:0});
+      await sb.from("mixup_versions").insert({id:vid,mixup_id:m.id,user_id:user.id,name:(t.title||"Version")+" (actuel)",storage_path:path,duration:t.dur,peaks:t.peaks,rms:null,size:t.size||0,position:0});
     }
     openMixup(m.id);toast("Mix créé — ajoute une autre version pour comparer");
   }catch(err){toast("Erreur : "+(err.message||err));}
@@ -2499,7 +2518,7 @@ async function initPublicMixup(id){
     if(mr.error||!mr.data||!mr.data.share_enabled){showPublicUnavailable();return;}
     publicMixup=mapMixup(mr.data);
     await mxLoad(id);
-    renderPublicMixup();
+    renderPublicMixup();mxEnsureLoudness();
   }catch(err){showPublicUnavailable();}
 }
 function renderPublicMixup(){
@@ -2514,7 +2533,7 @@ function renderPublicMixup(){
       <div class="mxversions" id="mxVerRow">
         ${mxVersions.map((v,i)=>`<div class="mxver${i===mxActive?" active":""}" data-i="${i}">
           <div class="vkey">${String.fromCharCode(65+i)}</div>
-          <div><div class="vlabel">${esc(v.name)}</div><div class="vdur">${fmt(v.dur)}${fmtExt(v.storage_path)?" · "+fmtExt(v.storage_path):""}</div></div>
+          <div><div class="vlabel">${esc(v.name)}</div><div class="vdur">${mxVerMeta(v)}</div></div>
         </div>`).join("")}
       </div>
       <div class="mxwavewrap" id="mxWaveWrap"><canvas class="mxwave" id="mxWave"></canvas><div class="mxmarkers" id="mxMarkers"></div></div>
