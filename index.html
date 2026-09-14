@@ -822,10 +822,7 @@
   <div class="sheet-in">
     <h3>Partager le projet</h3>
     <p class="sub" id="shareProjName"></p>
-    <div class="switchrow"><span>Activer le lien public</span>
-      <label class="switch"><input type="checkbox" id="shareToggle"><span class="sl"></span></label>
-    </div>
-    <div id="shareOpts" hidden>
+    <div id="shareOpts">
       <div class="field"><label>Ce que la personne peut faire</label>
         <div class="perms">
           <label class="perm"><input type="radio" name="perm" value="listen" checked><span>Écoute seule</span></label>
@@ -1069,7 +1066,7 @@ let mxVersions=[];        // versions of the currently open mixup
 let mxComments=[];        // comments of the currently open mixup
 const mxEls=[];           // <audio> elements, one per version
 let mxActive=0, mxLevelMatch=false, mxPlaying=false, mxRaf=0, mxDur=0, mxPublic=false;
-const MXBARS=200;   // waveform plus détaillée pour la comparaison
+const MXBARS=440;   // waveform très détaillée pour la comparaison
 function fmtExt(path){const e=((path||"").split(".").pop()||"").toLowerCase();
   const map={mp3:"MP3",wav:"WAV",m4a:"M4A",aac:"AAC",aif:"AIFF",aiff:"AIFF",flac:"FLAC",ogg:"OGG",opus:"OPUS"};
   return map[e]||(e?e.toUpperCase():"");}
@@ -1293,13 +1290,13 @@ function mxDrawWave(){
   const cs=getComputedStyle(document.documentElement);
   const orange=(cs.getPropertyValue("--accent-bright").trim())||"#ff8226";
   const grey=(cs.getPropertyValue("--wave-dim").trim())||"#3a3742";
-  const gap=Math.min(cell*0.42,3),bw=Math.max(1,cell-gap);
+  const gap=Math.max(.6,Math.min(cell*0.42,2)),bw=Math.max(.8,cell-gap);
   ctx.fillStyle=grey;
-  for(let i=0;i<N;i++){const h=Math.max(2,peaks[i]*(H-6));roundRect(ctx,i*cell+(cell-bw)/2,mid-h/2,bw,h,Math.min(bw/2,2));ctx.fill();}
+  for(let i=0;i<N;i++){const h=Math.max(2,peaks[i]*(H-6));roundRect(ctx,i*cell+(cell-bw)/2,mid-h/2,bw,h,Math.min(bw/2,1.5));ctx.fill();}
   const d=mxDur||mxVersions[mxActive]?.dur||1;const prog=Math.max(0,Math.min(1,mxCurrentTime()/d));
   const playX=prog*W;
   if(playX>0.5){ctx.save();ctx.beginPath();ctx.rect(0,0,playX,H);ctx.clip();ctx.fillStyle=orange;
-    for(let i=0;i<N;i++){const h=Math.max(2,peaks[i]*(H-6));ctx.fillRect(i*cell,mid-h/2,cell+0.7,h);}ctx.restore();
+    for(let i=0;i<N;i++){const h=Math.max(2,peaks[i]*(H-6));roundRect(ctx,i*cell+(cell-bw)/2,mid-h/2,bw,h,Math.min(bw/2,1.5));ctx.fill();}ctx.restore();
     ctx.fillStyle=orange;ctx.fillRect(Math.min(W-2,playX-1),1,2,H-2);}
   mxPlaceMarkers();
 }
@@ -1731,12 +1728,12 @@ function drawOne(c,progress){
   // partie non lue : barres grises
   ctx.fillStyle=grey;
   for(let i=0;i<N;i++){const h=Math.max(2,wavePeaks[i]*(H-2));roundRect(ctx,i*cell+(cell-bw)/2,mid-h/2,bw,h,Math.min(bw/2,2));ctx.fill();}
-  // partie écoutée : aplat orange lisse (silhouette pleine), coupé à la tête de lecture
+  // partie écoutée : mêmes barres mais en orange (on garde le détail), coupées à la tête de lecture
   const playX=Math.max(0,Math.min(W,progress*W));
   if(playX>0.5){
     ctx.save();ctx.beginPath();ctx.rect(0,0,playX,H);ctx.clip();
     ctx.fillStyle=orange;
-    for(let i=0;i<N;i++){const h=Math.max(2,wavePeaks[i]*(H-2));ctx.fillRect(i*cell,mid-h/2,cell+0.7,h);}
+    for(let i=0;i<N;i++){const h=Math.max(2,wavePeaks[i]*(H-2));roundRect(ctx,i*cell+(cell-bw)/2,mid-h/2,bw,h,Math.min(bw/2,2));ctx.fill();}
     ctx.restore();
     ctx.fillStyle=orange;ctx.fillRect(Math.min(W-2,playX-1),1,2,H-2);
   }
@@ -2388,18 +2385,12 @@ function openShare(p,kind){
   if(!p){toast(shareKind==="mixup"?"Ouvre un Mixup pour le partager":"Ouvre un projet pour le partager");return;}
   shareCtx=p;
   $("#shareProjName").textContent=p.name;
-  $("#shareToggle").checked=!!p.share_enabled;
   document.querySelectorAll('input[name=perm]').forEach(r=>{r.checked=(r.value===(p.share_perm||"listen"));});
-  $("#shareOpts").hidden=!p.share_enabled;
   $("#shareLink").value=shareUrl(p);
   openSheetEl("shareSheet");
+  // le lien est toujours actif : on l'active en base si ce n'est pas déjà fait
+  if(!p.share_enabled){p.share_enabled=true;sb.from(shareTable()).update({share_enabled:true}).eq("id",p.id).then(()=>{},()=>{});}
 }
-$("#shareToggle").onchange=async()=>{
-  if(!shareCtx)return;const on=$("#shareToggle").checked;
-  shareCtx.share_enabled=on;$("#shareOpts").hidden=!on;$("#shareLink").value=shareUrl(shareCtx);
-  const {error}=await sb.from(shareTable()).update({share_enabled:on}).eq("id",shareCtx.id);
-  if(error)toast("Erreur : "+error.message);else toast(on?"Lien activé":"Lien désactivé");
-};
 document.querySelectorAll('input[name=perm]').forEach(r=>r.onchange=async()=>{
   if(!r.checked||!shareCtx)return;shareCtx.share_perm=r.value;
   await sb.from(shareTable()).update({share_perm:r.value}).eq("id",shareCtx.id);
