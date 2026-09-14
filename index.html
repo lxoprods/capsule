@@ -328,6 +328,77 @@
   .cardmenu svg{width:18px;height:18px}
   @media (hover:none){.cardmenu{opacity:1;transform:none}}
 
+  /* ---------- Mixup ---------- */
+  .mxgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin-top:6px}
+  .mxcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;position:relative;transition:transform .12s,border-color .12s}
+  .mxcard:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .mxcard h4{font-size:16px;font-weight:700;margin:0 0 4px;line-height:1.2}
+  .mxcard .mxmeta{font-size:12.5px;color:var(--muted)}
+  .mxcard .mxdots{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:8px;border:none;cursor:pointer;
+    display:grid;place-items:center;background:var(--surface-2);color:var(--text);opacity:.75}
+  .mxcard .mxdots:hover{opacity:1}
+  .mxcard .mxdots svg{width:17px;height:17px}
+  .mxwrap-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--accent-bright);
+    background:rgba(255,130,38,.12);padding:2px 8px;border-radius:20px;margin-bottom:8px}
+  /* detail */
+  .mxhead{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .mxhead .mxtitle{font-size:26px;font-weight:800}
+  .mxhead .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .mxactions{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .mxbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);
+    color:var(--text);border-radius:11px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer}
+  .mxbtn:hover{border-color:var(--accent)}
+  .mxbtn svg{width:16px;height:16px}
+  .mxbtn.accent{background:linear-gradient(135deg,var(--accent-bright),var(--accent));color:#160c04;border:none}
+  .mxplayer{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0 18px}
+  .mxversions{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px}
+  .mxver{position:relative;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1.5px solid var(--line);
+    border-radius:12px;padding:9px 12px;cursor:pointer;transition:border-color .12s,background .12s;min-width:96px}
+  .mxver:hover{border-color:var(--muted)}
+  .mxver.active{border-color:var(--accent);background:rgba(255,130,38,.10)}
+  .mxver .vlabel{font-size:13.5px;font-weight:700}
+  .mxver .vdur{font-size:11px;color:var(--muted)}
+  .mxver .vkey{width:22px;height:22px;border-radius:6px;background:var(--bg);display:grid;place-items:center;
+    font-size:11px;font-weight:800;color:var(--accent-bright);flex:none}
+  .mxver.active .vkey{background:var(--accent);color:#160c04}
+  .mxver .vmenu{border:none;background:none;color:var(--muted);cursor:pointer;padding:2px;display:grid;place-items:center}
+  .mxver .vmenu:hover{color:var(--text)}
+  .mxver .vmenu svg{width:15px;height:15px}
+  .mxaddver{border:1.5px dashed var(--line);color:var(--muted);background:none;justify-content:center}
+  .mxaddver:hover{border-color:var(--accent);color:var(--accent-bright)}
+  .mxwavewrap{position:relative;height:96px;background:var(--bg);border-radius:12px;overflow:hidden;cursor:pointer}
+  .mxwave{width:100%;height:100%;display:block}
+  .mxmarkers{position:absolute;inset:0;pointer-events:none}
+  .mxmark{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.5);pointer-events:auto;cursor:pointer}
+  .mxmark::after{content:"";position:absolute;top:-1px;left:-4px;width:10px;height:10px;border-radius:50%;
+    background:var(--accent-bright);border:2px solid var(--bg)}
+  .mxmark:hover::after{transform:scale(1.25)}
+  .mxtransport{display:flex;align-items:center;gap:14px;margin-top:13px}
+  .mxplay{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;flex:none;
+    background:linear-gradient(135deg,var(--accent-bright),var(--accent));color:#160c04;display:grid;place-items:center}
+  .mxplay svg{width:22px;height:22px}
+  .mxtime{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .mxlevel{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
+  .mxswitch{width:38px;height:22px;border-radius:20px;background:var(--line);position:relative;transition:background .15s;flex:none}
+  .mxswitch::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s}
+  .mxlevel.on .mxswitch{background:var(--accent)}
+  .mxlevel.on .mxswitch::after{left:18px}
+  .mxcomments h4{font-size:15px;font-weight:700;margin:6px 0 10px}
+  .mxclist{display:flex;flex-direction:column;gap:8px}
+  .mxc{display:flex;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .mxc .cted{font-variant-numeric:tabular-nums;color:var(--accent-bright);font-weight:700;font-size:13px;cursor:pointer;flex:none;
+    background:rgba(255,130,38,.12);border-radius:7px;padding:3px 7px;height:fit-content}
+  .mxc .cbody{font-size:13.5px;line-height:1.45}
+  .mxc .cauthor{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .mxc .cdel{margin-left:auto;border:none;background:none;color:var(--muted);cursor:pointer;padding:2px;flex:none}
+  .mxc .cdel:hover{color:#ff7a68}
+  .mxc .cdel svg{width:15px;height:15px}
+  .mxcadd{display:flex;gap:8px;margin-bottom:14px}
+  .mxcadd input{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;color:var(--text);font-size:14px}
+  .mxcadd input:focus{outline:none;border-color:var(--accent)}
+  .mxcadd .attime{white-space:nowrap}
+  .mxempty{color:var(--muted);font-size:13.5px;padding:8px 0}
+
   /* popover menu */
   .menu{position:fixed;z-index:90;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
     padding:6px;min-width:180px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transform:scale(.96);transform-origin:top right;
@@ -513,6 +584,7 @@
       <a id="navHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg>Accueil</a>
       <a id="navSearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>Recherche</a>
       <a id="navFav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 18.9 6.1 21l1.2-6.5L2.5 9.9 9.1 9z"/></svg>Favoris</a>
+      <a id="navMixup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20V10M12 20V4M18 20v-7"/><circle cx="6" cy="7" r="2"/><circle cx="18" cy="10" r="2"/></svg>Mixup</a>
     </nav>
     <div class="lib-label"><span id="libLabelBtn" role="button" tabindex="0" style="cursor:pointer">Bibliothèque</span>
       <button id="addProjBtn" aria-label="Nouveau projet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -646,6 +718,53 @@
   </div>
 </div>
 
+<!-- mixup create/rename sheet -->
+<div class="sheet" id="mixupSheet">
+  <div class="sheet-in">
+    <h3 id="mixupSheetTitle">Nouveau Mixup</h3>
+    <p class="sub">Compare plusieurs versions d'un même morceau (mix, master…).</p>
+    <div class="field"><label for="mxName">Nom</label><input id="mxName" placeholder="ex. Nuit blanche — comparaison mix"></div>
+    <button class="btn" id="mxSave" disabled>Créer le Mixup</button>
+    <button class="btn danger" id="mxDel" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Supprimer ce Mixup</button>
+  </div>
+</div>
+
+<!-- mixup add-version sheet -->
+<div class="sheet" id="mxVerSheet">
+  <div class="sheet-in">
+    <h3>Ajouter une version</h3>
+    <p class="sub">Un autre mix, un master, une variante…</p>
+    <label class="drop" id="mxDrop" for="mxVerFile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M7 8l5-5 5 5M5 21h14"/></svg>
+      <b>Choisir un fichier audio</b><small>mp3, wav, m4a</small>
+    </label>
+    <input type="file" id="mxVerFile" accept="audio/*" hidden>
+    <div id="mxPicked"></div>
+    <div class="field"><label for="mxVerName">Nom de la version</label><input id="mxVerName" placeholder="ex. Mix 2 / Master"></div>
+    <button class="btn" id="mxVerSave" disabled>Ajouter la version</button>
+  </div>
+</div>
+
+<!-- mixup rename-version sheet -->
+<div class="sheet" id="mxRenSheet">
+  <div class="sheet-in">
+    <h3>Renommer la version</h3>
+    <div class="field"><input id="mxRenInput" placeholder="Nom de la version"></div>
+    <button class="btn" id="mxRenSave">Enregistrer</button>
+  </div>
+</div>
+
+<!-- add mixup version to a project -->
+<div class="sheet" id="mxToProjSheet">
+  <div class="sheet-in">
+    <h3>Ajouter au projet</h3>
+    <p class="sub">Copie cette version comme une track dans un de tes projets.</p>
+    <div class="field"><label for="mxProjSel">Projet</label><select id="mxProjSel"></select></div>
+    <div class="field"><label for="mxTrackName">Nom de la track</label><input id="mxTrackName" placeholder="Titre"></div>
+    <button class="btn" id="mxToProjSave">Ajouter au projet</button>
+  </div>
+</div>
+
 <!-- rename sheet -->
 <div class="sheet" id="renameSheet">
   <div class="sheet-in">
@@ -767,7 +886,7 @@ const GRADS=[["#7b5cff","#3ba3ff"],["#e2620f","#ffb347"],["#ff5c7a","#ff9a5c"],
   ["#22c1a8","#3b82f6"],["#a06bff","#ff6bd6"],["#8a8d92","#585b60"],["#f7b733","#fc4a1a"],["#4facfe","#00f2fe"]];
 const gradCss=g=>`linear-gradient(150deg,${g[0]},${g[1]})`;
 
-let state={projects:[],tracks:[],selected:null,view:"project",searchQuery:""};
+let state={projects:[],tracks:[],mixups:[],selected:null,mixupSel:null,view:"project",searchQuery:""};
 let db=null,audio=$("#audio"),current=null;
 let queue=[],qIndex=-1,shuffle=false,repeatAll=true;
 let pickedFile=null,pendingGrad=GRADS[0],pendingCover=null;
@@ -786,16 +905,25 @@ function mapTrack(r){return {id:r.id,projectId:r.project_id,title:r.title,dur:Nu
   peaks:(r.peaks&&r.peaks.length)?r.peaks:seededPeaks(r.id),bpm:r.bpm||0,key:r.music_key||"",
   order:r.position||0,size:r.size||0,date:r.created_at?new Date(r.created_at).getTime():Date.now(),
   demo:false,storage_path:r.storage_path||null,notes:r.notes||"",favorite:!!r.favorite,active_version_id:r.active_version_id||null};}
+function mapMixup(r){return {id:r.id,name:r.name,order:r.position||0,projectId:r.project_id||null,
+  share_enabled:!!r.share_enabled,share_perm:r.share_perm||"listen",
+  date:r.created_at?new Date(r.created_at).getTime():Date.now()};}
+function mapMxVer(r){return {id:r.id,mixupId:r.mixup_id,name:r.name,storage_path:r.storage_path,
+  dur:Number(r.duration)||0,peaks:(r.peaks&&r.peaks.length)?r.peaks:seededPeaks(r.id),
+  rms:Number(r.rms)||0.1,size:r.size||0,order:r.position||0};}
 async function loadAll(){
-  const [pr,tr]=await Promise.all([
+  const [pr,tr,mx]=await Promise.all([
     sb.from("projects").select("*").order("position",{ascending:true}),
     sb.from("tracks").select("*").order("position",{ascending:true}),
+    sb.from("mixups").select("*").order("position",{ascending:true}),
   ]);
   if(pr.error)toast("Erreur projets : "+pr.error.message);
   if(tr.error)toast("Erreur pistes : "+tr.error.message);
   state.projects=(pr.data||[]).map(mapProject);
   state.tracks=(tr.data||[]).map(mapTrack);
+  state.mixups=(mx&&!mx.error&&mx.data)?mx.data.map(mapMixup):[];
 }
+const mixup=id=>state.mixups.find(m=>m.id===id);
 
 /* ---------- audio decode + demo gen ---------- */
 let AC=null;const ac=()=>{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();return AC;};
@@ -857,16 +985,20 @@ function renderLib(){
 /* ---------- main render ---------- */
 function render(){
   if(publicMode)return;
+  if(state.view!=="mixup"&&typeof mxEls!=="undefined"&&mxEls.length)mxTeardown();
   renderLib();
   $$(".nav a").forEach(a=>a.classList.remove("active"));
   if(state.view==="home")$("#navHome").classList.add("active");
   if(state.view==="search")$("#navSearch").classList.add("active");
   if(state.view==="favorites")$("#navFav").classList.add("active");
+  if(state.view==="mixups"||state.view==="mixup")$("#navMixup").classList.add("active");
   const ll=$("#libLabelBtn");if(ll)ll.style.color=state.view==="library"?"var(--accent)":"";
   if(state.view==="home")renderHome();
   else if(state.view==="search")renderSearch();
   else if(state.view==="favorites")renderFavorites();
   else if(state.view==="library")renderLibrary();
+  else if(state.view==="mixups")renderMixups();
+  else if(state.view==="mixup")renderMixup();
   else renderProject();
   requestAnimationFrame(applyMarquees);
 }
@@ -931,6 +1063,441 @@ function renderFavorites(){
   $("#content").innerHTML=html;
   bindRows(favs,false);
 }
+
+/* ==================== MIXUP ==================== */
+let mxVersions=[];        // versions of the currently open mixup
+let mxComments=[];        // comments of the currently open mixup
+const mxEls=[];           // <audio> elements, one per version
+let mxActive=0, mxLevelMatch=false, mxPlaying=false, mxRaf=0, mxDur=0, mxPublic=false;
+
+/* ----- list view ----- */
+function renderMixups(){
+  $("#crumb").innerHTML="<b>Mixup</b>";
+  let html=`<div class="greet" style="font-size:26px">Mixup</div>
+    <p class="mxempty" style="margin:-4px 0 16px">Compare tes versions côte à côte, à volume égal, avec des commentaires horodatés.</p>`;
+  if(!state.mixups.length){
+    html+=`<div class="empty">Aucun Mixup pour l'instant.<br>Crée-en un pour comparer plusieurs mixes d'un morceau.</div>
+      <div style="text-align:center;margin-top:16px"><button class="mxbtn accent" id="mxNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouveau Mixup</button></div>`;
+  }else{
+    html+=`<div class="mxgrid">`+state.mixups.map(mxCard).join("")+
+      `<div class="mxcard" id="mxNew" style="display:grid;place-items:center;border-style:dashed;color:var(--muted);min-height:96px">
+        <div style="text-align:center"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><div style="margin-top:6px;font-weight:600">Nouveau Mixup</div></div>
+      </div></div>`;
+  }
+  $("#content").innerHTML=html;
+  const nb=$("#mxNew");if(nb)nb.onclick=()=>openMixupSheet();
+  $$("#content .mxcard[data-m]").forEach(c=>{
+    c.onclick=e=>{if(e.target.closest(".mxdots"))return;openMixup(c.dataset.m);};
+    const d=c.querySelector(".mxdots");if(d)d.onclick=e=>{e.stopPropagation();openMixupMenu(d,mixup(c.dataset.m));};
+  });
+}
+function mxCard(m){
+  const p=m.projectId?proj(m.projectId):null;
+  return `<div class="mxcard" data-m="${m.id}">
+    <button class="mxdots" aria-label="Options"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+    ${p?`<div class="mxwrap-badge"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h7l2 2h9v9H3z"/></svg>${esc(p.name)}</div>`:""}
+    <h4>${esc(m.name)}</h4>
+    <div class="mxmeta">${ago(m.date)}${m.share_enabled?" · partagé":""}</div>
+  </div>`;
+}
+function openMixupMenu(anchor,m){
+  if(!m)return;
+  openMenu(anchor,[
+    {icon:IC.play,label:"Ouvrir",act:()=>openMixup(m.id)},
+    {icon:IC.rename,label:"Renommer",act:()=>openMixupSheet(m)},
+    {icon:IC.share,label:"Partager",act:()=>openMixupShare(m)},
+    {sep:true},
+    {icon:IC.del,label:"Supprimer",danger:true,act:()=>confirmDeleteMixup(m)},
+  ]);
+}
+
+/* ----- detail view ----- */
+async function openMixup(id){
+  state.mixupSel=id;state.view="mixup";mxTeardown();
+  render();$("#main").scrollTop=0;
+  await mxLoad(id);
+  if(state.view==="mixup"&&state.mixupSel===id)renderMixup();
+}
+async function mxLoad(id){
+  mxVersions=[];mxComments=[];
+  const [v,c]=await Promise.all([
+    sb.from("mixup_versions").select("*").eq("mixup_id",id).order("position",{ascending:true}),
+    sb.from("mixup_comments").select("*").eq("mixup_id",id).order("t",{ascending:true}),
+  ]);
+  if(v&&!v.error&&v.data)mxVersions=v.data.map(mapMxVer);
+  if(c&&!c.error&&c.data)mxComments=c.data;
+}
+function renderMixup(){
+  const m=mixup(state.mixupSel);
+  if(!m){state.view="mixups";render();return;}
+  $("#crumb").innerHTML=`<span id="mxBack" role="button" tabindex="0" style="cursor:pointer;color:var(--muted)">Mixup</span> <b style="margin-left:6px">${esc(m.name)}</b>`;
+  const p=m.projectId?proj(m.projectId):null;
+  let html=`<div class="mxhead">
+    <div>
+      <div class="mxtitle">${esc(m.name)}</div>
+      <div class="sub">${mxVersions.length} version${mxVersions.length>1?"s":""}${p?` · lié à « ${esc(p.name)} »`:""}</div>
+    </div>
+    <div class="mxactions">
+      <button class="mxbtn" id="mxShareBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Partager</button>
+      <button class="mxbtn" id="mxEditBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Renommer</button>
+    </div>
+  </div>`;
+
+  if(!mxVersions.length){
+    html+=`<div class="mxplayer"><div class="mxempty" style="text-align:center;padding:14px">
+      Aucune version. Ajoute au moins deux fichiers pour comparer.<br><br>
+      <button class="mxbtn accent" id="mxAddFirst"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ajouter une version</button>
+    </div></div>`;
+  }else{
+    html+=`<div class="mxplayer">
+      <div class="mxversions" id="mxVerRow">
+        ${mxVersions.map((v,i)=>`<div class="mxver${i===mxActive?" active":""}" data-i="${i}">
+          <div class="vkey">${String.fromCharCode(65+i)}</div>
+          <div><div class="vlabel">${esc(v.name)}</div><div class="vdur">${fmt(v.dur)}</div></div>
+          <button class="vmenu" aria-label="Options version"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+        </div>`).join("")}
+        <button class="mxver mxaddver" id="mxAddVer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Version</button>
+      </div>
+      <div class="mxwavewrap" id="mxWaveWrap">
+        <canvas class="mxwave" id="mxWave"></canvas>
+        <div class="mxmarkers" id="mxMarkers"></div>
+      </div>
+      <div class="mxtransport">
+        <button class="mxplay" id="mxPlayBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <div class="mxtime" id="mxTime">0:00 / 0:00</div>
+        <div class="mxlevel${mxLevelMatch?" on":""}" id="mxLevelToggle" title="Écoute chaque version au même volume perçu">
+          <span>Volume égalisé</span><div class="mxswitch"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mxcomments">
+      <h4>Commentaires horodatés</h4>
+      <div class="mxcadd">
+        <button class="mxbtn attime" id="mxAtTime">à 0:00</button>
+        <input id="mxCInput" placeholder="Un retour à ce moment précis…">
+        <button class="mxbtn accent" id="mxCSend">Envoyer</button>
+      </div>
+      <div class="mxclist" id="mxCList"></div>
+    </div>`;
+  }
+  $("#content").innerHTML=html;
+  const back=$("#mxBack");if(back)back.onclick=()=>{state.view="mixups";mxTeardown();render();};
+  const eb=$("#mxEditBtn");if(eb)eb.onclick=()=>openMixupSheet(m);
+  const sb2=$("#mxShareBtn");if(sb2)sb2.onclick=()=>openMixupShare(m);
+  const af=$("#mxAddFirst");if(af)af.onclick=()=>openMxVerSheet();
+  const av=$("#mxAddVer");if(av)av.onclick=()=>openMxVerSheet();
+  if(mxVersions.length){
+    mxBuildAudio();
+    $$("#mxVerRow .mxver[data-i]").forEach(el=>{
+      el.onclick=e=>{if(e.target.closest(".vmenu"))return;mxSwitch(+el.dataset.i);};
+      const vm=el.querySelector(".vmenu");if(vm)vm.onclick=e=>{e.stopPropagation();openMxVerMenu(vm,mxVersions[+el.dataset.i]);};
+    });
+    $("#mxPlayBtn").onclick=mxTogglePlay;
+    $("#mxWaveWrap").onclick=e=>{if(e.target.classList.contains("mxmark"))return;mxSeekFromEvent(e);};
+    $("#mxLevelToggle").onclick=mxToggleLevel;
+    $("#mxCSend").onclick=mxAddComment;
+    $("#mxAtTime").onclick=()=>{const t=mxCurrentTime();$("#mxCInput").focus();};
+    $("#mxCInput").addEventListener("keydown",e=>{if(e.key==="Enter")mxAddComment();});
+    mxDrawWave();mxRenderComments();mxUpdateTimeUI();
+    requestAnimationFrame(()=>mxDrawWave());
+  }
+}
+
+/* ----- audio engine (multi-<audio>, instant A/B, keep position) ----- */
+function mxTeardown(){
+  cancelAnimationFrame(mxRaf);mxRaf=0;mxPlaying=false;
+  mxEls.forEach(a=>{try{a.pause();a.src="";}catch(e){}});
+  mxEls.length=0;mxActive=0;mxDur=0;
+}
+function mxBuildAudio(){
+  mxTeardown();
+  mxVersions.forEach((v,i)=>{
+    const a=new Audio();a.preload="auto";a.crossOrigin="anonymous";
+    const {data}=sb.storage.from("audio").getPublicUrl(v.storage_path);
+    a.src=(data&&data.publicUrl)||"";
+    a.addEventListener("loadedmetadata",()=>{if(a.duration&&a.duration>mxDur){mxDur=a.duration;mxUpdateTimeUI();}});
+    a.addEventListener("ended",()=>{mxPlaying=false;mxSetPlayIcon(false);cancelAnimationFrame(mxRaf);});
+    mxEls.push(a);
+  });
+  mxActive=Math.min(mxActive,mxVersions.length-1);
+  wavePeaksMx=mxVersions[mxActive]?mxVersions[mxActive].peaks||[]:[];
+  mxApplyLevels();
+}
+function mxLevelFactor(i){
+  if(!mxLevelMatch)return 1;
+  const rmss=mxVersions.map(v=>Math.max(0.0005,v.rms||0.1));
+  const ref=Math.min(...rmss);           // align to the quietest so all factors ≤ 1
+  return Math.max(0.15,Math.min(1,ref/rmss[i]));
+}
+function mxApplyLevels(){mxEls.forEach((a,i)=>{a.volume=(i===mxActive)?mxLevelFactor(i):0;});}
+function mxSwitch(i){
+  if(i===mxActive||i<0||i>=mxEls.length)return;
+  const t=mxCurrentTime();
+  mxActive=i;
+  mxEls.forEach((a,k)=>{try{if(Math.abs(a.currentTime-t)>0.04)a.currentTime=t;}catch(e){}});
+  mxApplyLevels();
+  $$("#mxVerRow .mxver[data-i]").forEach(el=>el.classList.toggle("active",+el.dataset.i===i));
+  mxVersions.forEach((v)=>{});
+  wavePeaksMx=mxVersions[i].peaks||[];mxDrawWave();
+}
+let wavePeaksMx=[];
+function mxCurrentTime(){const a=mxEls[mxActive];return a?(a.currentTime||0):0;}
+function mxTogglePlay(){
+  if(!mxEls.length)return;
+  if(mxPlaying){mxEls.forEach(a=>a.pause());mxPlaying=false;mxSetPlayIcon(false);cancelAnimationFrame(mxRaf);}
+  else{
+    audio.pause();setNpIcon&&setNpIcon(false); // pause main player to avoid overlap
+    const t=mxCurrentTime();
+    mxEls.forEach(a=>{try{if(Math.abs(a.currentTime-t)>0.05)a.currentTime=t;}catch(e){}a.play().catch(()=>{});});
+    mxApplyLevels();mxPlaying=true;mxSetPlayIcon(true);mxLoop();
+  }
+}
+function mxLoop(){
+  mxRaf=requestAnimationFrame(mxLoop);
+  const a=mxEls[mxActive];if(!a)return;
+  const t=a.currentTime||0;
+  mxEls.forEach((o,k)=>{if(k!==mxActive&&Math.abs((o.currentTime||0)-t)>0.08){try{o.currentTime=t;}catch(e){}}});
+  mxDrawWave();mxUpdateTimeUI();
+}
+function mxSetPlayIcon(p){const b=$("#mxPlayBtn");if(!b)return;
+  b.innerHTML=p?`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>`:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;}
+function mxToggleLevel(){mxLevelMatch=!mxLevelMatch;$("#mxLevelToggle").classList.toggle("on",mxLevelMatch);mxApplyLevels();
+  toast(mxLevelMatch?"Volume égalisé entre les versions":"Volume d'origine");}
+function mxSeekFromEvent(e){const wrap=$("#mxWaveWrap");const r=wrap.getBoundingClientRect();
+  const p=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));const d=mxDur||mxVersions[mxActive].dur||1;
+  mxEls.forEach(a=>{try{a.currentTime=p*d;}catch(e){}});mxDrawWave();mxUpdateTimeUI();}
+function mxUpdateTimeUI(){const el=$("#mxTime");if(!el)return;const d=mxDur||mxVersions[mxActive]?.dur||0;
+  el.textContent=`${fmt(mxCurrentTime())} / ${fmt(d)}`;const at=$("#mxAtTime");if(at)at.textContent="à "+fmt(mxCurrentTime());}
+function mxDrawWave(){
+  const c=$("#mxWave");if(!c||!c.getContext)return;
+  const peaks=(wavePeaksMx&&wavePeaksMx.length)?wavePeaksMx:(mxVersions[mxActive]?.peaks||[]);
+  const rect=c.getBoundingClientRect();if(!rect.width)return;
+  const dpr=window.devicePixelRatio||1,W=Math.round(rect.width),H=Math.round(rect.height);
+  if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+  const ctx=c.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const N=peaks.length||1,cell=W/N,mid=H/2;
+  const cs=getComputedStyle(document.documentElement);
+  const orange=(cs.getPropertyValue("--accent-bright").trim())||"#ff8226";
+  const grey=(cs.getPropertyValue("--wave-dim").trim())||"#3a3742";
+  const gap=Math.min(cell*0.42,3),bw=Math.max(1,cell-gap);
+  ctx.fillStyle=grey;
+  for(let i=0;i<N;i++){const h=Math.max(2,peaks[i]*(H-6));roundRect(ctx,i*cell+(cell-bw)/2,mid-h/2,bw,h,Math.min(bw/2,2));ctx.fill();}
+  const d=mxDur||mxVersions[mxActive]?.dur||1;const prog=Math.max(0,Math.min(1,mxCurrentTime()/d));
+  const playX=prog*W;
+  if(playX>0.5){ctx.save();ctx.beginPath();ctx.rect(0,0,playX,H);ctx.clip();ctx.fillStyle=orange;
+    for(let i=0;i<N;i++){const h=Math.max(2,peaks[i]*(H-6));ctx.fillRect(i*cell,mid-h/2,cell+0.7,h);}ctx.restore();
+    ctx.fillStyle=orange;ctx.fillRect(Math.min(W-2,playX-1),1,2,H-2);}
+  mxPlaceMarkers();
+}
+function mxPlaceMarkers(){
+  const box=$("#mxMarkers");if(!box)return;const d=mxDur||mxVersions[mxActive]?.dur||1;
+  box.innerHTML=mxComments.map((c,i)=>`<div class="mxmark" data-c="${i}" style="left:${Math.max(0,Math.min(100,(Number(c.t)/d)*100))}%" title="${esc((c.author||"")+' · '+fmt(c.t))}"></div>`).join("");
+  $$("#mxMarkers .mxmark").forEach(el=>el.onclick=ev=>{ev.stopPropagation();const c=mxComments[+el.dataset.c];if(c)mxJumpTo(Number(c.t));});
+}
+function mxJumpTo(t){mxEls.forEach(a=>{try{a.currentTime=t;}catch(e){}});mxDrawWave();mxUpdateTimeUI();
+  if(!mxPlaying)mxTogglePlay();}
+
+/* ----- comments ----- */
+function mxRenderComments(){
+  const list=$("#mxCList");if(!list)return;
+  if(!mxComments.length){list.innerHTML=`<div class="mxempty">Pas encore de commentaire. Mets la lecture sur un passage et écris un retour.</div>`;return;}
+  list.innerHTML=mxComments.map((c,i)=>`<div class="mxc">
+    <span class="cted" data-j="${i}">${fmt(c.t)}</span>
+    <div><div class="cbody">${esc(c.body||"")}</div><div class="cauthor">${esc(c.author||"anonyme")} · ${ago(c.created_at?new Date(c.created_at).getTime():Date.now())}</div></div>
+    ${mxPublic?"":`<button class="cdel" data-d="${i}" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>`}
+  </div>`).join("");
+  $$("#mxCList .cted").forEach(el=>el.onclick=()=>mxJumpTo(Number(mxComments[+el.dataset.j].t)));
+  $$("#mxCList .cdel").forEach(el=>el.onclick=()=>mxDelComment(+el.dataset.d));
+}
+async function mxAddComment(){
+  const inp=$("#mxCInput");if(!inp)return;const body=inp.value.trim();if(!body)return;
+  const t=Math.round(mxCurrentTime()*100)/100;
+  let author;
+  if(mxPublic){const nf=$("#mxCName");author=(nf&&nf.value.trim())||viewerName||"invité";try{if(nf&&nf.value.trim())localStorage.setItem("capsule-mxname",nf.value.trim());}catch(e){}}
+  else author=(user&&user.user_metadata&&user.user_metadata.pseudo)||(user&&user.email)||"moi";
+  const row={id:uuid(),mixup_id:(mxPublic?publicMixupId:state.mixupSel),user_id:user?user.id:null,author,t,body,version_id:mxVersions[mxActive]?mxVersions[mxActive].id:null};
+  inp.value="";
+  const {error}=await sb.from("mixup_comments").insert(row);
+  if(error){toast("Erreur : "+error.message);return;}
+  row.created_at=new Date().toISOString();
+  mxComments.push(row);mxComments.sort((a,b)=>Number(a.t)-Number(b.t));
+  mxRenderComments();mxPlaceMarkers();
+}
+async function mxDelComment(i){
+  const c=mxComments[i];if(!c)return;
+  const {error}=await sb.from("mixup_comments").delete().eq("id",c.id);
+  if(error){toast("Erreur : "+error.message);return;}
+  mxComments.splice(i,1);mxRenderComments();mxPlaceMarkers();
+}
+
+/* ----- version menu ----- */
+function openMxVerMenu(anchor,v){
+  if(!v)return;const idx=mxVersions.indexOf(v);
+  openMenu(anchor,[
+    {icon:IC.play,label:"Écouter cette version",act:()=>{mxSwitch(idx);if(!mxPlaying)mxTogglePlay();}},
+    {icon:IC.rename,label:"Renommer",act:()=>openMxRen(v)},
+    {icon:IC.move,label:"Ajouter au projet…",act:()=>openMxToProj(v)},
+    {icon:IC.dl,label:"Télécharger",act:()=>mxDownloadVer(v)},
+    {sep:true},
+    {icon:IC.del,label:"Supprimer la version",danger:true,act:()=>mxDelVersion(v)},
+  ]);
+}
+async function mxDownloadVer(v){
+  const {data}=sb.storage.from("audio").getPublicUrl(v.storage_path);
+  if(!data||!data.publicUrl){toast("Fichier introuvable");return;}
+  const a=document.createElement("a");a.href=data.publicUrl;a.download=(v.name||"version")+"."+(v.storage_path.split(".").pop()||"mp3");
+  document.body.appendChild(a);a.click();a.remove();
+}
+async function mxDelVersion(v){
+  const {error}=await sb.from("mixup_versions").delete().eq("id",v.id);
+  if(error){toast("Erreur : "+error.message);return;}
+  if(v.storage_path)sb.storage.from("audio").remove([v.storage_path]);
+  mxVersions=mxVersions.filter(x=>x.id!==v.id);
+  if(mxActive>=mxVersions.length)mxActive=Math.max(0,mxVersions.length-1);
+  mxTeardown();renderMixup();toast("Version supprimée");
+}
+
+/* ----- sheets: create / rename mixup ----- */
+let mxEdit=null;
+function openMixupSheet(edit){
+  mxEdit=edit||null;
+  $("#mixupSheetTitle").textContent=edit?"Renommer le Mixup":"Nouveau Mixup";
+  $("#mxName").value=edit?edit.name:"";
+  $("#mxSave").disabled=!(edit&&edit.name);$("#mxSave").textContent=edit?"Enregistrer":"Créer le Mixup";
+  $("#mxDel").style.display=edit?"flex":"none";
+  openSheetEl("mixupSheet");
+}
+$("#mxName").addEventListener("input",()=>{$("#mxSave").disabled=!$("#mxName").value.trim();});
+$("#mxSave").onclick=async()=>{const name=$("#mxName").value.trim();if(!name||!user)return;const btn=$("#mxSave");btn.disabled=true;
+  try{
+    if(mxEdit){
+      mxEdit.name=name;const {error}=await sb.from("mixups").update({name}).eq("id",mxEdit.id);if(error)throw error;
+      closeSheets();render();toast("Mixup mis à jour ✓");
+    }else{
+      const maxo=Math.max(-1,...state.mixups.map(m=>m.order??0));
+      const row={id:uuid(),user_id:user.id,name,position:maxo+1};
+      const ins=await sb.from("mixups").insert(row).select().single();if(ins.error)throw ins.error;
+      state.mixups.push(mapMixup(ins.data));closeSheets();openMixup(ins.data.id);toast("Mixup créé ✓");
+    }
+    mxEdit=null;
+  }catch(err){toast("Erreur : "+(err.message||err));}finally{btn.disabled=false;}
+};
+$("#mxDel").onclick=()=>{if(mxEdit)confirmDeleteMixup(mxEdit);};
+function confirmDeleteMixup(m){
+  openConfirm(`Supprimer le Mixup « ${m.name} » et toutes ses versions et commentaires ? Cette action est définitive.`,"Supprimer",()=>doDeleteMixup(m));
+}
+async function doDeleteMixup(m){
+  const vs=(state.mixupSel===m.id?mxVersions:[]);
+  let paths=vs.map(v=>v.storage_path).filter(Boolean);
+  if(!paths.length){const r=await sb.from("mixup_versions").select("storage_path").eq("mixup_id",m.id);if(r&&r.data)paths=r.data.map(x=>x.storage_path).filter(Boolean);}
+  await sb.from("mixup_comments").delete().eq("mixup_id",m.id);
+  await sb.from("mixup_versions").delete().eq("mixup_id",m.id);
+  const {error}=await sb.from("mixups").delete().eq("id",m.id);
+  if(error){toast("Erreur : "+error.message);return;}
+  if(paths.length)sb.storage.from("audio").remove(paths);
+  state.mixups=state.mixups.filter(x=>x.id!==m.id);
+  mxTeardown();state.view="mixups";state.mixupSel=null;closeSheets();render();toast("Mixup supprimé");
+}
+
+/* ----- rename version ----- */
+let mxRenV=null;
+function openMxRen(v){mxRenV=v;$("#mxRenInput").value=v.name||"";openSheetEl("mxRenSheet");setTimeout(()=>$("#mxRenInput").focus(),120);}
+$("#mxRenSave").onclick=async()=>{if(!mxRenV)return;const name=$("#mxRenInput").value.trim();if(!name){closeSheets();return;}
+  mxRenV.name=name;const {error}=await sb.from("mixup_versions").update({name}).eq("id",mxRenV.id);
+  if(error){toast("Erreur : "+error.message);return;}
+  closeSheets();renderMixup();toast("Renommé ✓");};
+
+/* ----- add version (upload) ----- */
+let mxPickedFile=null;
+function openMxVerSheet(){mxPickedFile=null;$("#mxPicked").innerHTML="";$("#mxDrop").style.display="";$("#mxVerName").value="";
+  $("#mxVerSave").disabled=true;$("#mxVerSave").textContent="Ajouter la version";openSheetEl("mxVerSheet");}
+$("#mxVerFile").addEventListener("change",e=>mxOnFile(e.target.files[0]));
+(function(){const d=$("#mxDrop");
+  ["dragover","dragenter"].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add("hot");}));
+  ["dragleave","drop"].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove("hot");}));
+  d.addEventListener("drop",e=>{if(e.dataTransfer.files[0])mxOnFile(e.dataTransfer.files[0]);});
+})();
+function mxOnFile(f){if(!f)return;if(!f.type.startsWith("audio")){toast("Choisis un fichier audio");return;}
+  mxPickedFile=f;$("#mxPicked").innerHTML=`<div class="picked"><span class="nm">${esc(f.name)}</span><span class="sz">${(f.size/1048576).toFixed(1)} Mo</span></div>`;
+  $("#mxDrop").style.display="none";if(!$("#mxVerName").value)$("#mxVerName").value="Mix "+(mxVersions.length+1);$("#mxVerSave").disabled=false;}
+$("#mxVerName").addEventListener("input",()=>{$("#mxVerSave").disabled=!mxPickedFile;});
+$("#mxVerSave").onclick=async()=>{if(!mxPickedFile||!user||!state.mixupSel)return;const btn=$("#mxVerSave");btn.disabled=true;btn.textContent="Envoi…";
+  try{
+    const v=await mxUploadVersion(mxPickedFile,state.mixupSel,$("#mxVerName").value.trim());
+    mxVersions.push(v);closeSheets();mxTeardown();renderMixup();toast("Version ajoutée ✓");
+  }catch(err){toast("Erreur : "+(err.message||err));btn.disabled=false;btn.textContent="Ajouter la version";}
+};
+async function mxUploadVersion(file,mixupId,name){
+  const ab=await file.arrayBuffer();const {peaks,dur,rms}=await decodePeaksRMS(ab);
+  const vid=uuid(),ext=((file.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat",path=`${user.id}/mx_${vid}.${ext}`;
+  const up=await sb.storage.from("audio").upload(path,file,{contentType:file.type||"audio/mpeg",upsert:false});
+  if(up.error)throw up.error;
+  const maxo=Math.max(-1,...mxVersions.map(v=>v.order??0));
+  const row={id:vid,mixup_id:mixupId,user_id:user.id,name:name||("Mix "+(mxVersions.length+1)),storage_path:path,duration:dur,peaks,rms,size:file.size,position:maxo+1};
+  const ins=await sb.from("mixup_versions").insert(row).select().single();
+  if(ins.error)throw ins.error;
+  return mapMxVer(ins.data);
+}
+/* absolute RMS (kept, not normalized) so we can equalize loudness across versions */
+async function decodePeaksRMS(ab){
+  try{const buf=await ac().decodeAudioData(ab.slice(0));
+    const ch=buf.getChannelData(0),bl=Math.floor(ch.length/NBARS)||1,pk=[];let mx=1e-4,sumsq=0;
+    for(let i=0;i<NBARS;i++){let s=0;for(let j=0;j<bl;j++){const v=ch[i*bl+j]||0;s+=v*v;}const r=Math.sqrt(s/bl);pk.push(r);if(r>mx)mx=r;}
+    const step=Math.max(1,Math.floor(ch.length/50000));let cnt=0;
+    for(let i=0;i<ch.length;i+=step){sumsq+=ch[i]*ch[i];cnt++;}
+    const rms=Math.sqrt(sumsq/Math.max(1,cnt))||0.1;
+    return{peaks:pk.map(v=>Math.max(.08,Math.min(1,v/mx))),dur:buf.duration,rms};
+  }catch(e){return{peaks:seededPeaks("fb"+Date.now()),dur:0,rms:0.1};}
+}
+
+/* ----- add a version to a project (copies the file) ----- */
+let mxToProjV=null;
+function openMxToProj(v){
+  mxToProjV=v;
+  if(!state.projects.length){toast("Crée d'abord un projet");return;}
+  $("#mxProjSel").innerHTML=state.projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+  $("#mxTrackName").value=v.name||"";openSheetEl("mxToProjSheet");
+}
+$("#mxToProjSave").onclick=async()=>{if(!mxToProjV||!user)return;const btn=$("#mxToProjSave");btn.disabled=true;btn.textContent="Copie…";
+  try{
+    const pid=$("#mxProjSel").value;const title=$("#mxTrackName").value.trim()||mxToProjV.name;
+    const ext=(mxToProjV.storage_path.split(".").pop()||"mp3");const tid=uuid();const newPath=`${user.id}/${tid}.${ext}`;
+    const cp=await sb.storage.from("audio").copy(mxToProjV.storage_path,newPath);
+    if(cp.error)throw cp.error;
+    const maxo=Math.max(-1,...state.tracks.filter(t=>t.projectId===pid).map(t=>t.order??0));
+    const row={id:tid,user_id:user.id,project_id:pid,title,storage_path:newPath,duration:mxToProjV.dur,peaks:mxToProjV.peaks,size:mxToProjV.size,position:maxo+1};
+    const ins=await sb.from("tracks").insert(row).select().single();if(ins.error)throw ins.error;
+    const vv=uuid();
+    await sb.from("track_versions").insert({id:vv,track_id:tid,user_id:user.id,name:"v1",storage_path:newPath,duration:mxToProjV.dur,peaks:mxToProjV.peaks,size:mxToProjV.size,position:0});
+    await sb.from("tracks").update({active_version_id:vv}).eq("id",tid);
+    const nt=mapTrack(ins.data);nt.active_version_id=vv;state.tracks.push(nt);
+    closeSheets();toast("Ajouté au projet ✓");
+  }catch(err){toast("Erreur : "+(err.message||err));}
+  finally{btn.disabled=false;btn.textContent="Ajouter au projet";}
+};
+
+/* ----- create a Mixup from a project track (copies the file as version A) ----- */
+async function mixupFromTrack(t){
+  if(!user)return;
+  toast("Création du Mixup…");
+  try{
+    const maxo=Math.max(-1,...state.mixups.map(m=>m.order??0));
+    const mrow={id:uuid(),user_id:user.id,name:t.title||"Comparaison",project_id:t.projectId||null,position:maxo+1};
+    const mi=await sb.from("mixups").insert(mrow).select().single();if(mi.error)throw mi.error;
+    const m=mapMixup(mi.data);state.mixups.push(m);
+    // copy the track file as version A
+    if(t.storage_path){
+      const ext=(t.storage_path.split(".").pop()||"mp3");const vid=uuid();const path=`${user.id}/mx_${vid}.${ext}`;
+      const cp=await sb.storage.from("audio").copy(t.storage_path,path);if(cp.error)throw cp.error;
+      const rms=0.1;
+      await sb.from("mixup_versions").insert({id:vid,mixup_id:m.id,user_id:user.id,name:(t.title||"Version")+" (actuel)",storage_path:path,duration:t.dur,peaks:t.peaks,rms,size:t.size||0,position:0});
+    }
+    openMixup(m.id);toast("Mixup créé — ajoute une autre version pour comparer");
+  }catch(err){toast("Erreur : "+(err.message||err));}
+}
+
+/* ----- mixup sharing (reuses the same share sheet as projects) ----- */
+function openMixupShare(m){ if(typeof openShare==="function"){ openShare(m,"mixup"); } }
 
 function renderSearch(){
   $("#crumb").innerHTML="<b>Recherche</b>";
@@ -1282,6 +1849,7 @@ function openTrackMenu(anchor,t,ctx){
     {icon:IC.layers,label:"Versions",act:()=>openVersions(t)},
     {icon:IC.rename,label:"Renommer",act:()=>openRename(t)},
     {icon:IC.move,label:"Déplacer / copier…",act:()=>openMove(t)},
+    {icon:IC.layers,label:"Comparer dans Mixup",act:()=>mixupFromTrack(t)},
     {icon:IC.dl,label:"Télécharger",act:()=>downloadTrack(t)},
     {sep:true},
     {icon:IC.up,label:"Monter",act:()=>moveTrack(t,-1)},
@@ -1653,6 +2221,7 @@ function openProject(id){state.selected=id;state.view="project";render();$("#mai
 $("#navHome").onclick=()=>{state.view="home";closeDrawer();render();};
 $("#navSearch").onclick=()=>{state.view="search";closeDrawer();render();$("#search").focus();};
 $("#navFav").onclick=()=>{state.view="favorites";closeDrawer();render();$("#main").scrollTop=0;};
+$("#navMixup").onclick=()=>{mxTeardown();state.view="mixups";closeDrawer();render();$("#main").scrollTop=0;};
 $("#libLabelBtn").onclick=()=>{state.view="library";closeDrawer();render();$("#main").scrollTop=0;};
 $("#libLabelBtn").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();$("#libLabelBtn").onclick();}};
 $("#addProjBtn").onclick=()=>openProjSheet();
@@ -1787,10 +2356,12 @@ async function handleSession(session){
 /* ==================================================================
    VAGUE 2a — Partage public, page publique, notifications d'écoute
 ================================================================== */
-let shareCtx=null;
-function shareUrl(p){return location.origin+location.pathname+"?p="+p.id;}
-function openShare(p){
-  if(!p){toast("Ouvre un projet pour le partager");return;}
+let shareCtx=null, shareKind="project";
+function shareTable(){return shareKind==="mixup"?"mixups":"projects";}
+function shareUrl(p){return location.origin+location.pathname+"?"+(shareKind==="mixup"?"m":"p")+"="+p.id;}
+function openShare(p,kind){
+  shareKind=kind||"project";
+  if(!p){toast(shareKind==="mixup"?"Ouvre un Mixup pour le partager":"Ouvre un projet pour le partager");return;}
   shareCtx=p;
   $("#shareProjName").textContent=p.name;
   $("#shareToggle").checked=!!p.share_enabled;
@@ -1802,12 +2373,12 @@ function openShare(p){
 $("#shareToggle").onchange=async()=>{
   if(!shareCtx)return;const on=$("#shareToggle").checked;
   shareCtx.share_enabled=on;$("#shareOpts").hidden=!on;$("#shareLink").value=shareUrl(shareCtx);
-  const {error}=await sb.from("projects").update({share_enabled:on}).eq("id",shareCtx.id);
+  const {error}=await sb.from(shareTable()).update({share_enabled:on}).eq("id",shareCtx.id);
   if(error)toast("Erreur : "+error.message);else toast(on?"Lien activé":"Lien désactivé");
 };
 document.querySelectorAll('input[name=perm]').forEach(r=>r.onchange=async()=>{
   if(!r.checked||!shareCtx)return;shareCtx.share_perm=r.value;
-  await sb.from("projects").update({share_perm:r.value}).eq("id",shareCtx.id);
+  await sb.from(shareTable()).update({share_perm:r.value}).eq("id",shareCtx.id);
   toast(r.value==="download"?"Écoute + téléchargement":"Écoute seule");
 });
 $("#copyLink").onclick=async()=>{
@@ -1901,11 +2472,74 @@ function renderPublic(){
 }
 async function playPublic(t){await playInContext(t,publicTracks);recordPlay(t);renderPublic();}
 
+/* ---------- public Mixup page ---------- */
+let publicMixupId=null, publicMixup=null;
+async function initPublicMixup(id){
+  document.body.classList.add("pubmode");
+  $("#auth").classList.remove("show");
+  mxPublic=true;publicMixupId=id;
+  try{const {data:sd}=await sb.auth.getSession();if(sd&&sd.session&&sd.session.user){user=sd.session.user;const md=user.user_metadata||{};viewerName=md.pseudo||user.email||"invité";}}catch(e){}
+  try{
+    const mr=await sb.from("mixups").select("*").eq("id",id).maybeSingle();
+    if(mr.error||!mr.data||!mr.data.share_enabled){showPublicUnavailable();return;}
+    publicMixup=mapMixup(mr.data);
+    await mxLoad(id);
+    renderPublicMixup();
+  }catch(err){showPublicUnavailable();}
+}
+function renderPublicMixup(){
+  $("#public").classList.add("show");
+  const m=publicMixup;const allowComment=true;
+  let savedName="";try{savedName=localStorage.getItem("capsule-mxname")||"";}catch(e){}
+  let h=`<div class="pubhero"><div class="pi"><div class="eyebrow">Mixup partagé</div><h1>${esc(m.name)}</h1>
+    <div class="pm">${mxVersions.length} version${mxVersions.length>1?"s":""} à comparer</div></div></div>`;
+  if(!mxVersions.length){h+=`<div class="empty">Ce Mixup est vide pour le moment.</div>`;}
+  else{
+    h+=`<div class="mxplayer">
+      <div class="mxversions" id="mxVerRow">
+        ${mxVersions.map((v,i)=>`<div class="mxver${i===mxActive?" active":""}" data-i="${i}">
+          <div class="vkey">${String.fromCharCode(65+i)}</div>
+          <div><div class="vlabel">${esc(v.name)}</div><div class="vdur">${fmt(v.dur)}</div></div>
+        </div>`).join("")}
+      </div>
+      <div class="mxwavewrap" id="mxWaveWrap"><canvas class="mxwave" id="mxWave"></canvas><div class="mxmarkers" id="mxMarkers"></div></div>
+      <div class="mxtransport">
+        <button class="mxplay" id="mxPlayBtn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <div class="mxtime" id="mxTime">0:00 / 0:00</div>
+        <div class="mxlevel${mxLevelMatch?" on":""}" id="mxLevelToggle"><span>Volume égalisé</span><div class="mxswitch"></div></div>
+      </div>
+    </div>
+    <div class="mxcomments">
+      <h4>Commentaires horodatés</h4>
+      <div class="mxcadd"><input id="mxCName" placeholder="Ton nom" style="max-width:130px" value="${esc(savedName)}">
+        <button class="mxbtn attime" id="mxAtTime">à 0:00</button>
+        <input id="mxCInput" placeholder="Un retour à ce moment…">
+        <button class="mxbtn accent" id="mxCSend">Envoyer</button></div>
+      <div class="mxclist" id="mxCList"></div>
+    </div>`;
+  }
+  h+=`<div class="pubcta">Créé avec <a href="${location.pathname}">Capsule</a> — coffre à idées musicales</div>`;
+  $("#pubBody").innerHTML=h;
+  if(mxVersions.length){
+    mxBuildAudio();
+    $$("#mxVerRow .mxver[data-i]").forEach(el=>el.onclick=()=>mxSwitch(+el.dataset.i));
+    $("#mxPlayBtn").onclick=mxTogglePlay;
+    $("#mxWaveWrap").onclick=e=>{if(e.target.classList.contains("mxmark"))return;mxSeekFromEvent(e);};
+    $("#mxLevelToggle").onclick=mxToggleLevel;
+    $("#mxCSend").onclick=mxAddComment;
+    $("#mxCInput").addEventListener("keydown",e=>{if(e.key==="Enter")mxAddComment();});
+    mxDrawWave();mxRenderComments();mxUpdateTimeUI();
+    requestAnimationFrame(()=>mxDrawWave());
+  }
+}
+
 /* ---------- boot ---------- */
 async function boot(){
   const params=new URLSearchParams(location.search);
   const sharedPid=params.get("p");
   if(sharedPid){publicMode=true;initPublic(sharedPid,params.get("t"));return;}
+  const sharedMx=params.get("m");
+  if(sharedMx){publicMode=true;initPublicMixup(sharedMx);return;}
   setAuthMode("login");
   render();
   sb.auth.onAuthStateChange((_e,session)=>handleSession(session));
