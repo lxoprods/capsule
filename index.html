@@ -316,6 +316,17 @@
     border:none;border-radius:12px;padding:14px;font-weight:600;font-size:15px;cursor:pointer;transition:transform .1s,opacity .2s}
   .btn:active{transform:scale(.98)}.btn:disabled{opacity:.4;cursor:not-allowed}
   .btn.ghost{background:none;border:1px solid var(--line);color:var(--text);margin-top:10px}
+  .btn.danger{background:none;border:1px solid rgba(255,90,70,.5);color:#ff7a68;margin-top:10px;
+    display:flex;align-items:center;justify-content:center;gap:9px}
+  .btn.danger svg{width:17px;height:17px}
+  .btn.danger:hover{background:rgba(255,90,70,.1)}
+  .cardmenu{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:9px;border:none;cursor:pointer;
+    display:grid;place-items:center;background:rgba(10,8,6,.55);backdrop-filter:blur(6px);color:#fff;
+    opacity:0;transform:translateY(-3px);transition:opacity .18s,transform .18s;z-index:2}
+  .card:hover .cardmenu{opacity:1;transform:translateY(0)}
+  .cardmenu:hover{background:rgba(10,8,6,.8)}
+  .cardmenu svg{width:18px;height:18px}
+  @media (hover:none){.cardmenu{opacity:1;transform:none}}
 
   /* popover menu */
   .menu{position:fixed;z-index:90;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;
@@ -621,7 +632,17 @@
     <div class="field"><label for="pName">Nom du projet</label><input id="pName" placeholder="ex. EP — Nuit blanche"></div>
     <div class="field"><label>Pochette</label><div class="covers" id="covers"></div></div>
     <button class="btn" id="saveProj" disabled>Créer le projet</button>
-    <button class="btn ghost" id="delProj" style="display:none">Supprimer ce projet</button>
+    <button class="btn danger" id="delProj" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/></svg>Supprimer ce projet</button>
+  </div>
+</div>
+
+<!-- confirm dialog -->
+<div class="sheet" id="confirmSheet">
+  <div class="sheet-in">
+    <h3 id="confirmTitle">Confirmer</h3>
+    <p class="sub" id="confirmMsg"></p>
+    <button class="btn danger" id="confirmOk" style="display:flex">Supprimer</button>
+    <button class="btn ghost" id="confirmCancel">Annuler</button>
   </div>
 </div>
 
@@ -854,6 +875,7 @@ function projectCard(p){
   const n=state.tracks.filter(t=>t.projectId===p.id).length;
   return `<div class="card" data-p="${p.id}">
     <div class="cc" style="background-image:${coverBg(p)}">
+      <button class="cardmenu" data-menu="${p.id}" aria-label="Options du projet"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
       ${n?`<button class="cardplay" data-play="${p.id}" aria-label="Lire"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>`:""}
     </div>
     <div class="cn">${esc(p.name)}</div>
@@ -867,7 +889,20 @@ function bindCards(){
   $$("#content .card[data-p]").forEach(c=>c.onclick=()=>openProject(c.dataset.p));
   $$("#content .cardplay").forEach(b=>b.onclick=e=>{e.stopPropagation();
     const tr=orderedTracks(b.dataset.play);if(tr.length)playInContext(tr[0],tr);});
+  $$("#content .cardmenu").forEach(b=>b.onclick=e=>{e.stopPropagation();
+    const p=proj(b.dataset.menu);if(p)openProjectMenu(b,p);});
   const ac=$("#addCard");if(ac)ac.onclick=()=>openProjSheet();
+}
+function openProjectMenu(anchor,p){
+  const n=state.tracks.filter(t=>t.projectId===p.id).length;
+  const items=[
+    {icon:IC.rename,label:"Modifier (nom, pochette)",act:()=>openProjSheet(p)},
+    {icon:IC.share||IC.dl,label:"Partager",act:()=>openShare(p)},
+    {icon:IC.dl,label:"Télécharger en ZIP",act:()=>{if(n)downloadProjectZip(p);else toast("Ce projet n'a aucune track");}},
+    {sep:true},
+    {icon:IC.del,label:"Supprimer le projet",danger:true,act:()=>confirmDeleteProject(p)},
+  ];
+  openMenu(anchor,items);
 }
 
 function renderHome(){
@@ -1237,7 +1272,8 @@ const IC={rename:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
   note:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12l-4 4H4z"/><path d="M14 20v-4h4"/></svg>`,
   dl:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg>`,
   layers:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></svg>`,
-  move:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9l-2-2M20 12l-2-2-2 2M9 12H20M4 17h9l-2 2"/></svg>`};
+  move:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h9l-2-2M20 12l-2-2-2 2M9 12H20M4 17h9l-2 2"/></svg>`,
+  share:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>`};
 function openTrackMenu(anchor,t,ctx){
   const items=[
     {icon:IC.play,label:"Lire",act:()=>playInContext(t,ctx)},
@@ -1569,14 +1605,22 @@ $("#saveProj").onclick=async()=>{const name=$("#pName").value.trim();if(!name||!
   }catch(err){toast("Erreur : "+(err.message||err));}
   finally{btn.disabled=false;}
 };
-$("#delProj").onclick=async()=>{if(!projEdit)return;const pid=projEdit.id;
+$("#delProj").onclick=()=>{if(projEdit)confirmDeleteProject(projEdit);};
+function confirmDeleteProject(p){
+  const n=state.tracks.filter(t=>t.projectId===p.id).length;
+  const msg=n?`Supprimer « ${p.name} » et ses ${n} track${n>1?"s":""} ? Cette action est définitive.`
+             :`Supprimer le projet « ${p.name} » ? Cette action est définitive.`;
+  openConfirm(msg,"Supprimer",()=>doDeleteProject(p));
+}
+async function doDeleteProject(p){
+  const pid=p.id;
   const paths=state.tracks.filter(t=>t.projectId===pid).map(t=>t.storage_path).filter(Boolean);
   const {error}=await sb.from("projects").delete().eq("id",pid);
   if(error){toast("Erreur : "+error.message);return;}
   if(paths.length)sb.storage.from("audio").remove(paths);
-  state.tracks=state.tracks.filter(t=>t.projectId!==pid);state.projects=state.projects.filter(p=>p.id!==pid);
+  state.tracks=state.tracks.filter(t=>t.projectId!==pid);state.projects=state.projects.filter(x=>x.id!==pid);
   if(state.selected===pid)state.selected=state.projects[0]?state.projects[0].id:null;
-  state.view=state.selected?"project":"home";closeSheets();render();toast("Projet supprimé");projEdit=null;};
+  state.view=state.selected?"project":"home";closeSheets();render();toast("Projet supprimé");projEdit=null;}
 
 /* cover image upload (resize) */
 $("#coverInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;
@@ -1593,6 +1637,16 @@ $("#coverInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)r
 function openSheetEl(id){$("#scrim").classList.add("open");$("#"+id).classList.add("open");}
 function closeSheets(){$("#scrim").classList.remove("open");$$(".sheet").forEach(s=>s.classList.remove("open"));}
 $("#scrim").onclick=closeSheets;
+/* ---------- confirm dialog ---------- */
+let confirmAct=null;
+function openConfirm(msg,okLabel,act){
+  closeMenu();
+  $("#confirmMsg").textContent=msg;
+  $("#confirmOk").innerHTML=okLabel||"Confirmer";
+  confirmAct=act;openSheetEl("confirmSheet");
+}
+$("#confirmCancel").onclick=()=>{confirmAct=null;closeSheets();};
+$("#confirmOk").onclick=()=>{const a=confirmAct;confirmAct=null;closeSheets();if(a)a();};
 
 /* ---------- nav / drawer ---------- */
 function openProject(id){state.selected=id;state.view="project";render();$("#main").scrollTop=0;}
