@@ -403,6 +403,12 @@
   .adbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 16px}
   .adbar .grow{margin-left:auto}
   .adstats{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+  .r2gauge{margin:0 0 18px;padding:12px 14px;border:1px solid var(--line,#333);border-radius:12px}
+  .r2gauge .bar{height:8px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px}
+  .r2gauge .bar i{display:block;height:100%;background:#ff7a1a}
+  .r2gauge.warn{border-color:#ff7a1a}.r2gauge.full{border-color:#ff3b30}.r2gauge.full .bar i{background:#ff3b30}
+  #r2alert{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9999;max-width:min(560px,calc(100% - 32px));
+    background:#ff3b30;color:#fff;padding:12px 16px;border-radius:12px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.4);cursor:pointer}
   .adstat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:13px 16px;min-width:120px}
   .adstat .num{font-size:24px;font-weight:800}
   .adstat .lab{font-size:12px;color:var(--muted);margin-top:2px}
@@ -926,6 +932,86 @@
 const SB_URL="https://quevkkkvicpcrtbvnmsh.supabase.co";
 const SB_KEY="sb_publishable_Xn_FGc8VaBIqie5Jxy3uXA_O9N6F7hX";
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:"capsule-auth"}});
+/* ---------- stockage audio : Cloudflare R2 (nouveau) + Supabase Storage (anciens fichiers) ----------
+   Les chemins qui commencent par "r2:" sont sur R2, les autres sur l'ancien bucket Supabase "audio".
+   R2_URL = adresse du Worker Cloudflare "capsule-r2". Laisser vide = tout reste sur Supabase. */
+const R2_URL="https://capsule-r2.capsule-studio.workers.dev";
+const P=R2_URL?"r2:":"";
+const isR2=p=>typeof p==="string"&&p.startsWith("r2:");
+const r2k=p=>isR2(p)?p.slice(3):p;
+const r2enc=k=>k.split("/").map(encodeURIComponent).join("/");
+async function r2tok(){const {data}=await sb.auth.getSession();return data&&data.session?data.session.access_token:"";}
+async function r2call(method,route,body,ctype){
+  const r=await fetch(R2_URL+route,{method,headers:{"Authorization":"Bearer "+await r2tok(),"Content-Type":ctype||"application/json"},
+    body:ctype?body:JSON.stringify(body)});
+  let j={};try{j=await r.json();}catch(e){}
+  if(!r.ok)throw new Error(j.error||("Stockage R2 : erreur "+r.status));
+  return j;
+}
+const SBST=sb.storage.from("audio");
+const ST={
+  getPublicUrl(p){
+    if(isR2(p))return {data:{publicUrl:R2_URL+"/f/"+r2enc(r2k(p))}};
+    return SBST.getPublicUrl(p);
+  },
+  async upload(p,file,opts){
+    if(!isR2(p))return SBST.upload(p,file,opts);
+    try{await r2call("PUT","/f/"+r2enc(r2k(p)),file,(opts&&opts.contentType)||file.type||"application/octet-stream");return {data:{path:p},error:null};}
+    catch(e){return {data:null,error:e};}
+  },
+  async remove(paths){
+    const r2=paths.filter(isR2).map(r2k),old=paths.filter(x=>!isR2(x));
+    if(old.length)SBST.remove(old);
+    if(r2.length&&R2_URL){try{await r2call("POST","/delete",{keys:r2});}catch(e){console.warn(e);}}
+    return {error:null};
+  },
+  async copy(from,to){
+    if(!isR2(to))return SBST.copy(from,to);
+    try{await r2call("POST",isR2(from)?"/copy":"/import",{from:r2k(from),to:r2k(to)});return {error:null};}
+    catch(e){return {error:e};}
+  }
+};
+/* espace R2 : jauge admin + alerte si on approche des 10 Go gratuits */
+let r2Usage=null;
+async function r2LoadUsage(refresh){
+  if(!R2_URL)return null;
+  try{r2Usage=await (await fetch(R2_URL+"/usage"+(refresh?"?refresh=1":""))).json();}catch(e){r2Usage=null;}
+  return r2Usage;
+}
+function r2GaugeHtml(){
+  if(!r2Usage||r2Usage.bytes==null)return "";
+  const pct=r2Usage.percentOfFree,cls=pct>=95?"full":pct>=80?"warn":"";
+  return `<div class="r2gauge ${cls}"><b>Stockage des sons (Cloudflare R2)</b> — ${r2Usage.usedGB.toFixed(2)} Go / 10 Go gratuits (${pct}%) · ${r2Usage.count} fichiers
+    <div class="bar"><i style="width:${Math.min(100,pct)}%"></i></div>
+    <div style="font-size:12px;opacity:.7;margin-top:6px">Garde-fou : les envois sont bloqués à 9,5 Go, tu ne peux pas dépasser le gratuit.</div></div>`;
+}
+async function r2AlertIfNeeded(){
+  const u=await r2LoadUsage();if(!u||u.percentOfFree<80||$("#r2alert"))return;
+  const d=document.createElement("div");d.id="r2alert";
+  d.textContent=u.percentOfFree>=95
+    ?`⚠️ Stockage presque plein : ${u.usedGB.toFixed(2)} Go sur 10 Go. Les nouveaux envois sont bloqués à 9,5 Go — supprime des sons.`
+    :`⚠️ Stockage à ${u.percentOfFree}% : ${u.usedGB.toFixed(2)} Go sur 10 Go gratuits. Pense à faire du tri.`;
+  d.onclick=()=>d.remove();document.body.appendChild(d);
+}
+/* migration admin : déplace tous les anciens fichiers Supabase vers R2 */
+async function migrateToR2(onStep){
+  if(!R2_URL)throw new Error("R2_URL n'est pas encore rempli dans index.html");
+  const tables=["tracks","track_versions","mixup_versions"];const paths=new Set();
+  for(const tb of tables){
+    const r=await sb.from(tb).select("storage_path").not("storage_path","is",null).not("storage_path","like","r2:%");
+    if(r.error)throw r.error;(r.data||[]).forEach(x=>x.storage_path&&paths.add(x.storage_path));
+  }
+  const list=[...paths];let ok=0;const fails=[];
+  for(let i=0;i<list.length;i++){
+    const old=list[i];onStep&&onStep(i,list.length,old);
+    try{
+      await r2call("POST","/import",{from:old,to:old});
+      for(const tb of tables){const u=await sb.from(tb).update({storage_path:"r2:"+old}).eq("storage_path",old);if(u.error)throw u.error;}
+      await SBST.remove([old]);ok++;
+    }catch(e){fails.push(old+" → "+(e.message||e));}
+  }
+  return {total:list.length,ok,fails};
+}
 let user=null, booted=false, publicMode=false;
 const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 const NBARS=64;
@@ -1295,7 +1381,7 @@ function mxBuildAudio(){
   wavePeaksMx=mxVersions[mxActive]?mxVersions[mxActive].peaks||[]:[];
   // charge + décode chaque version en parallèle (un seul contexte audio -> OK iOS)
   mxVersions.forEach((v,i)=>{
-    const {data}=sb.storage.from("audio").getPublicUrl(v.storage_path);
+    const {data}=ST.getPublicUrl(v.storage_path);
     const url=data&&data.publicUrl;if(!url)return;
     fetch(url).then(r=>r.arrayBuffer()).then(ab=>ctx.decodeAudioData(ab.slice(0))).then(buf=>{
       mxBuffers[i]=buf;
@@ -1410,7 +1496,7 @@ async function mxEnsureLoudness(){
   for(const v of mxVersions){
     if(v.rms&&v.rms>0)continue;                 // déjà mesuré
     try{
-      const {data}=sb.storage.from("audio").getPublicUrl(v.storage_path);
+      const {data}=ST.getPublicUrl(v.storage_path);
       if(!data||!data.publicUrl)continue;
       const ab=await (await fetch(data.publicUrl)).arrayBuffer();
       const {rms}=await decodePeaksRMS(ab);
@@ -1509,7 +1595,7 @@ function openMxVerMenu(anchor,v){
   ]);
 }
 async function mxDownloadVer(v){
-  const {data}=sb.storage.from("audio").getPublicUrl(v.storage_path);
+  const {data}=ST.getPublicUrl(v.storage_path);
   if(!data||!data.publicUrl){toast("Fichier introuvable");return;}
   const a=document.createElement("a");a.href=data.publicUrl;a.download=(v.name||"version")+"."+(v.storage_path.split(".").pop()||"mp3");
   document.body.appendChild(a);a.click();a.remove();
@@ -1517,7 +1603,7 @@ async function mxDownloadVer(v){
 async function mxDelVersion(v){
   const {error}=await sb.from("mixup_versions").delete().eq("id",v.id);
   if(error){toast("Erreur : "+error.message);return;}
-  if(v.storage_path)sb.storage.from("audio").remove([v.storage_path]);
+  if(v.storage_path)ST.remove([v.storage_path]);
   mxVersions=mxVersions.filter(x=>x.id!==v.id);
   if(mxActive>=mxVersions.length)mxActive=Math.max(0,mxVersions.length-1);
   mxTeardown();renderMixup();toast("Version supprimée");
@@ -1560,7 +1646,7 @@ async function doDeleteMixup(m){
   await sb.from("mixup_versions").delete().eq("mixup_id",m.id);
   const {error}=await sb.from("mixups").delete().eq("id",m.id);
   if(error){toast("Erreur : "+error.message);return;}
-  if(paths.length)sb.storage.from("audio").remove(paths);
+  if(paths.length)ST.remove(paths);
   state.mixups=state.mixups.filter(x=>x.id!==m.id);
   mxTeardown();state.view="mixups";state.mixupSel=null;closeSheets();render();toast("Mix supprimé");
 }
@@ -1595,8 +1681,8 @@ $("#mxVerSave").onclick=async()=>{if(!mxPickedFile||!user||!state.mixupSel)retur
 };
 async function mxUploadVersion(file,mixupId,name){
   const ab=await file.arrayBuffer();const {peaks,dur,rms,lufs}=await decodePeaksRMS(ab);
-  const vid=uuid(),ext=((file.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat",path=`${user.id}/mx_${vid}.${ext}`;
-  const up=await sb.storage.from("audio").upload(path,file,{contentType:file.type||"audio/mpeg",upsert:false});
+  const vid=uuid(),ext=((file.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat",path=`${P}${user.id}/mx_${vid}.${ext}`;
+  const up=await ST.upload(path,file,{contentType:file.type||"audio/mpeg",upsert:false});
   if(up.error)throw up.error;
   const maxo=Math.max(-1,...mxVersions.map(v=>v.order??0));
   const row={id:vid,mixup_id:mixupId,user_id:user.id,name:name||("Mix "+(mxVersions.length+1)),storage_path:path,duration:dur,peaks,rms,lufs,size:file.size,position:maxo+1};
@@ -1628,8 +1714,8 @@ function openMxToProj(v){
 $("#mxToProjSave").onclick=async()=>{if(!mxToProjV||!user)return;const btn=$("#mxToProjSave");btn.disabled=true;btn.textContent="Copie…";
   try{
     const pid=$("#mxProjSel").value;const title=$("#mxTrackName").value.trim()||mxToProjV.name;
-    const ext=(mxToProjV.storage_path.split(".").pop()||"mp3");const tid=uuid();const newPath=`${user.id}/${tid}.${ext}`;
-    const cp=await sb.storage.from("audio").copy(mxToProjV.storage_path,newPath);
+    const ext=(mxToProjV.storage_path.split(".").pop()||"mp3");const tid=uuid();const newPath=`${P}${user.id}/${tid}.${ext}`;
+    const cp=await ST.copy(mxToProjV.storage_path,newPath);
     if(cp.error)throw cp.error;
     const maxo=Math.max(-1,...state.tracks.filter(t=>t.projectId===pid).map(t=>t.order??0));
     const row={id:tid,user_id:user.id,project_id:pid,title,storage_path:newPath,duration:mxToProjV.dur,peaks:mxToProjV.peaks,size:mxToProjV.size,position:maxo+1};
@@ -1654,8 +1740,8 @@ async function mixupFromTrack(t){
     const m=mapMixup(mi.data);state.mixups.push(m);
     // copy the track file as version A
     if(t.storage_path){
-      const ext=(t.storage_path.split(".").pop()||"mp3");const vid=uuid();const path=`${user.id}/mx_${vid}.${ext}`;
-      const cp=await sb.storage.from("audio").copy(t.storage_path,path);if(cp.error)throw cp.error;
+      const ext=(t.storage_path.split(".").pop()||"mp3");const vid=uuid();const path=`${P}${user.id}/mx_${vid}.${ext}`;
+      const cp=await ST.copy(t.storage_path,path);if(cp.error)throw cp.error;
       await sb.from("mixup_versions").insert({id:vid,mixup_id:m.id,user_id:user.id,name:(t.title||"Version")+" (actuel)",storage_path:path,duration:t.dur,peaks:t.peaks,rms:null,size:t.size||0,position:0});
     }
     openMixup(m.id);toast("Mix créé — ajoute une autre version pour comparer");
@@ -1822,7 +1908,7 @@ window.addEventListener("resize",applyMarquees);
 async function urlFor(t){
   if(!t.storage_path)return null;
   if(urlCache.has(t.id))return urlCache.get(t.id);
-  const {data}=sb.storage.from("audio").getPublicUrl(t.storage_path);
+  const {data}=ST.getPublicUrl(t.storage_path);
   const u=data&&data.publicUrl;if(u)urlCache.set(t.id,u);return u||null;}
 async function playInContext(t,ctx){
   queue=ctx.map(x=>x.id);qIndex=queue.indexOf(t.id);
@@ -2088,8 +2174,8 @@ async function moveOrCopy(mode){
       if(error)throw error;
       t.projectId=target;t.order=maxo+1;
     }else{
-      const newId=uuid(),ext=(t.storage_path&&t.storage_path.split(".").pop())||"mp3",newPath=`${user.id}/${newId}.${ext}`;
-      if(t.storage_path){const cp=await sb.storage.from("audio").copy(t.storage_path,newPath);if(cp.error)throw cp.error;}
+      const newId=uuid(),ext=(t.storage_path&&t.storage_path.split(".").pop())||"mp3",newPath=`${P}${user.id}/${newId}.${ext}`;
+      if(t.storage_path){const cp=await ST.copy(t.storage_path,newPath);if(cp.error)throw cp.error;}
       const row={id:newId,user_id:user.id,project_id:target,title:t.title,storage_path:t.storage_path?newPath:null,
         duration:t.dur,bpm:t.bpm,music_key:t.key,peaks:t.peaks,size:t.size,position:maxo+1,notes:t.notes||"",favorite:false};
       const ins=await sb.from("tracks").insert(row).select().single();if(ins.error)throw ins.error;
@@ -2171,7 +2257,7 @@ async function deleteVersion(t,v){
   if(versionCache.length<=1){toast("Impossible de supprimer la dernière version");return;}
   const {error}=await sb.from("track_versions").delete().eq("id",v.id);
   if(error){toast("Erreur : "+error.message);return;}
-  if(v.storage_path&&v.storage_path!==t.storage_path)sb.storage.from("audio").remove([v.storage_path]);
+  if(v.storage_path&&v.storage_path!==t.storage_path)ST.remove([v.storage_path]);
   versionCache=versionCache.filter(x=>x.id!==v.id);
   if(t.active_version_id===v.id){await setActiveVersion(t,versionCache[versionCache.length-1]);}
   else renderVersions();
@@ -2184,8 +2270,8 @@ $("#versionInput").addEventListener("change",async e=>{
   const t=versionCtx,btn=$("#addVersionBtn"),lbl=btn.innerHTML;btn.disabled=true;btn.textContent="Envoi…";
   try{
     const ab=await f.arrayBuffer();const{peaks,dur}=await decodePeaks(ab);
-    const vid=uuid(),ext=((f.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat",path=`${user.id}/${vid}.${ext}`;
-    const up=await sb.storage.from("audio").upload(path,f,{contentType:f.type||"audio/mpeg"});
+    const vid=uuid(),ext=((f.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat",path=`${P}${user.id}/${vid}.${ext}`;
+    const up=await ST.upload(path,f,{contentType:f.type||"audio/mpeg"});
     if(up.error)throw up.error;
     const maxo=Math.max(-1,...versionCache.map(x=>x.position||0));
     const ins=await sb.from("track_versions").insert({id:vid,track_id:t.id,user_id:user.id,name:"v"+(versionCache.length+1),storage_path:path,duration:dur,peaks,size:f.size,position:maxo+1}).select().single();
@@ -2209,7 +2295,7 @@ async function moveTrack(t,dir){
 async function deleteTrack(t){
   const {error}=await sb.from("tracks").delete().eq("id",t.id);
   if(error){toast("Erreur : "+error.message);return;}
-  if(t.storage_path)sb.storage.from("audio").remove([t.storage_path]);
+  if(t.storage_path)ST.remove([t.storage_path]);
   state.tracks=state.tracks.filter(x=>x.id!==t.id);
   if(current&&current.id===t.id){audio.pause();current=null;$("#np").classList.remove("up");}
   queue=queue.filter(id=>id!==t.id);
@@ -2248,8 +2334,8 @@ $("#tTitle").addEventListener("input",()=>{$("#saveTrack").disabled=!pickedFile;
 async function uploadTrackFile(file,pid,extra){
   extra=extra||{};
   const ab=await file.arrayBuffer();const{peaks,dur}=await decodePeaks(ab);
-  const tid=uuid(),ext=((file.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat",path=`${user.id}/${tid}.${ext}`;
-  const up=await sb.storage.from("audio").upload(path,file,{contentType:file.type||"audio/mpeg",upsert:false});
+  const tid=uuid(),ext=((file.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat",path=`${P}${user.id}/${tid}.${ext}`;
+  const up=await ST.upload(path,file,{contentType:file.type||"audio/mpeg",upsert:false});
   if(up.error)throw up.error;
   const maxo=Math.max(-1,...state.tracks.filter(t=>t.projectId===pid).map(t=>t.order??0));
   const row={id:tid,user_id:user.id,project_id:pid,title:(extra.title&&extra.title.trim())||file.name.replace(/\.[^.]+$/,""),
@@ -2361,7 +2447,7 @@ async function doDeleteProject(p){
   const paths=state.tracks.filter(t=>t.projectId===pid).map(t=>t.storage_path).filter(Boolean);
   const {error}=await sb.from("projects").delete().eq("id",pid);
   if(error){toast("Erreur : "+error.message);return;}
-  if(paths.length)sb.storage.from("audio").remove(paths);
+  if(paths.length)ST.remove(paths);
   state.tracks=state.tracks.filter(t=>t.projectId!==pid);state.projects=state.projects.filter(x=>x.id!==pid);
   if(state.selected===pid)state.selected=state.projects[0]?state.projects[0].id:null;
   state.view=state.selected?"project":"home";closeSheets();render();toast("Projet supprimé");projEdit=null;}
@@ -2476,6 +2562,7 @@ function refreshProfileUI(){
   if(md.avatar){ava.style.backgroundImage=`url(${md.avatar})`;ava.style.backgroundSize="cover";ava.style.backgroundPosition="center";ava.textContent="";}
   else{ava.style.backgroundImage="";ava.textContent=(name||"?").trim().charAt(0).toUpperCase();}
   const na=$("#navAdmin");if(na)na.hidden=!isAdmin();
+  if(isAdmin())r2AlertIfNeeded();
 }
 let profAvatar; // undefined = inchangé ; string = nouvelle photo
 function openProfile(){
@@ -2747,9 +2834,11 @@ function renderAdmin(){
       <div class="adstat"><div class="num">${adTracks.length}</div><div class="lab">sons</div></div>
       <div class="adstat"><div class="num">${totalPlays}</div><div class="lab">écoutes</div></div>
     </div>
+    ${r2GaugeHtml()}
     <div class="adbar">
       <button class="mxbtn accent" id="adNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Créer un compte artiste</button>
       <button class="mxbtn grow" id="adRefresh" style="flex:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 7"/><path d="M21 3v4h-4"/></svg>Rafraîchir</button>
+      ${R2_URL?`<button class="mxbtn grow" id="adR2" style="flex:none">Migrer les sons vers R2</button>`:""}
     </div>`;
   if(!artists.length){
     html+=`<div class="empty">Aucun compte artiste pour l'instant.<br>Crée-en un avec le bouton ci-dessus.</div>`;
@@ -2767,7 +2856,18 @@ function renderAdmin(){
   }
   $("#content").innerHTML=html;
   $("#adNew").onclick=openAdNew;
-  $("#adRefresh").onclick=async()=>{adLoaded=false;await adLoadAll();renderAdmin();toast("À jour ✓");};
+  if(R2_URL&&!r2Usage)r2LoadUsage(true).then(u=>{if(u&&state.view==="admin")renderAdmin();});
+  if($("#adR2"))$("#adR2").onclick=async()=>{
+    if(!confirm("Copier tous les anciens sons de Supabase vers Cloudflare R2, puis les effacer de Supabase ?"))return;
+    const b=$("#adR2");b.disabled=true;
+    try{const r=await migrateToR2((i,n)=>{b.textContent=`Migration ${i+1}/${n}…`;});
+      b.textContent="Migrer les sons vers R2";
+      alert(`Migration terminée : ${r.ok}/${r.total} fichiers déplacés.`+(r.fails.length?"\n\nÉchecs :\n"+r.fails.slice(0,15).join("\n"):""));
+      location.reload();return;
+    }catch(e){alert("Erreur : "+(e.message||e));b.textContent="Migrer les sons vers R2";}
+    b.disabled=false;
+  };
+  $("#adRefresh").onclick=async()=>{adLoaded=false;await r2LoadUsage(true);await adLoadAll();renderAdmin();toast("À jour ✓");};
   $$("#content .adrow[data-u]").forEach(r=>r.onclick=()=>openAdminArtist(r.dataset.u));
 }
 
@@ -2862,8 +2962,8 @@ $("#adUpSave").onclick=async()=>{
 async function adUploadForArtist(file,pid,artistId,title){
   const ab=await file.arrayBuffer();const {peaks,dur}=await decodePeaks(ab);
   const tid=uuid(),ext=((file.name.split(".").pop()||"dat").toLowerCase().replace(/[^a-z0-9]/g,""))||"dat";
-  const path=`${user.id}/${tid}.${ext}`;   // stocké sous le préfixe admin (OK pour les règles Storage)
-  const up=await sb.storage.from("audio").upload(path,file,{contentType:file.type||"audio/mpeg",upsert:false});
+  const path=`${P}${user.id}/${tid}.${ext}`;   // stocké sous le préfixe admin (OK pour les règles Storage)
+  const up=await ST.upload(path,file,{contentType:file.type||"audio/mpeg",upsert:false});
   if(up.error)throw up.error;
   const maxo=Math.max(-1,...adTracks.filter(t=>t.project_id===pid).map(()=>0));
   const row={id:tid,user_id:artistId,project_id:pid,title:(title||file.name.replace(/\.[^.]+$/,"")),storage_path:path,duration:dur,peaks,size:file.size,position:maxo+1};
