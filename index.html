@@ -265,7 +265,21 @@
   .volslider{width:0;opacity:0;accent-color:var(--accent);height:4px;cursor:pointer;
     transition:width .2s ease,opacity .2s ease,margin .2s ease}
   .volwrap:hover .volslider,.volwrap:focus-within .volslider{width:72px;opacity:1;margin:0 4px 0 2px}
-  @media (hover:none){.volwrap{display:none}}
+  @media (hover:none){.volwrap{display:none}
+    .np.remote .volwrap{display:flex}.np.remote .volslider{width:84px;opacity:1;margin:0 4px 0 2px}}
+  .rcpop{position:fixed;z-index:120;width:min(300px,calc(100vw - 24px));background:var(--accent-bright,#ff8226);color:#14100c;
+    border-radius:14px;padding:13px 14px 12px;box-shadow:0 14px 40px rgba(0,0,0,.55);font-size:13.5px;line-height:1.35;
+    opacity:0;transform:translateY(8px) scale(.97);transition:opacity .22s,transform .22s;pointer-events:none}
+  .rcpop.show{opacity:1;transform:none;pointer-events:auto}
+  .rcpop::after{content:"";position:absolute;bottom:-7px;left:var(--ax,50%);margin-left:-8px;border:8px solid transparent;
+    border-bottom:0;border-top-color:var(--accent-bright,#ff8226)}
+  .rcpop.noarrow::after{display:none}
+  .rcpop b{font-weight:700}
+  .rcpop .acts{display:flex;gap:8px;margin-top:11px}
+  .rcpop button{flex:1;border:none;border-radius:9px;padding:9px 10px;font:inherit;font-weight:600;cursor:pointer}
+  .rcpop .yes{background:#14100c;color:#fff}
+  .rcpop .no{background:rgba(20,16,12,.12);color:#14100c}
+  .rcpop .x{position:absolute;top:6px;right:8px;flex:none;width:24px;height:24px;padding:0;background:none;color:#14100c;opacity:.6;font-size:16px}
 
   /* ================= lecteur plein écran ================= */
   #nowplaying{position:fixed;inset:0;z-index:170;display:flex;flex-direction:column;
@@ -2141,7 +2155,7 @@ async function remoteInit(){
       if(ch!==rcChan)return;const st=ch.presenceState();rcDevices={};
       Object.keys(st).forEach(k=>{const m=st[k]&&st[k][st[k].length-1];if(m&&m.id)rcDevices[m.id]=m;});
       if(remote&&!rcDevices[remote.id]){const n=remote.name;remoteStopUI();toast(`« ${n} » s'est déconnecté`);}
-      rcRefreshButtons();})
+      rcRefreshButtons();rcMaybePop();})
     .on("broadcast",{event:"cmd"},({payload})=>{if(payload&&payload.to===DEV.id)rcHandle(payload);})
     .on("broadcast",{event:"state"},({payload})=>{if(remote&&payload&&payload.from===remote.id)rcApplyState(payload);})
     .subscribe(async status=>{
@@ -2250,6 +2264,9 @@ function remoteStart(dev){
   $("#np").classList.add("remote");$("#nowplaying").classList.add("remote");
   $("#npRemote").textContent="▶ Sur "+dev.name;$("#fpRemote").textContent="Lecture sur « "+dev.name+" »";
   clearInterval(rcTick);rcTick=setInterval(rcRender,500);
+  if(!transfer&&!current){$("#npTitle").textContent="Choisis un son";$("#npArtist").textContent="Il jouera sur "+dev.name;
+    $("#npTime").textContent="";wavePeaks=[];drawWave(0);setNpIcon(false);}
+  $("#np").classList.add("up");rcPopHide();
   rcUpdatePresence();
   setTimeout(()=>{if(transfer)rcSend({cmd:"load",...transfer,play:true});else rcSend({cmd:"hello"});},500);
   rcRefreshButtons();toast("Tu contrôles « "+dev.name+" »");
@@ -2284,8 +2301,46 @@ function openDevices(anchor){
     act:()=>{if(!(remote&&remote.id===d.id))remoteStart(d);}}));}
   openMenu(anchor,items);
 }
-$("#devBtn").onclick=e=>{e.stopPropagation();openDevices($("#devBtn"));};
-$("#fpDev").onclick=e=>{e.stopPropagation();openDevices($("#fpDev"));};
+/* ---- bulle façon Spotify : « Écouter sur le Mac ? » (téléphones / tablettes) ---- */
+const rcIsTouch=window.matchMedia&&matchMedia("(hover:none)").matches;
+const rcPopSeen=new Set();let rcPopT=0;
+function rcPopHide(){const el=$("#rcpop");if(el){el.classList.remove("show");setTimeout(()=>{if(!el.classList.contains("show"))el.remove();},250);}clearTimeout(rcPopT);}
+function rcPopShow(dev){
+  rcPopHide();
+  const meHere=current&&!audio.paused&&!remote;
+  let msg,yes,no="Non merci";
+  if(meHere){msg=`<b>${esc(dev.name)}</b> est disponible.<br>Continuer l'écoute sur ${esc(dev.name)} ?`;yes="Écouter dessus";no="Rester ici";}
+  else if(dev.playing&&dev.title){msg=`<b>${esc(dev.name)}</b> joue « ${esc(dev.title)} ».<br>Le contrôler depuis ce téléphone ?`;yes="Contrôler";}
+  else{msg=`<b>${esc(dev.name)}</b> est ouvert.<br>Écouter sur ${esc(dev.name)} plutôt qu'ici ?`;yes="Écouter dessus";no="Ici";}
+  const el=document.createElement("div");el.className="rcpop";el.id="rcpop";
+  el.innerHTML=`<button class="x" aria-label="Fermer">×</button><div>${msg}</div><div class="acts"><button class="no">${no}</button><button class="yes">${yes}</button></div>`;
+  document.body.appendChild(el);
+  el.querySelector(".yes").onclick=()=>{rcPopHide();const d=rcDevices[dev.id];if(d)remoteStart(d);else toast("Cet appareil n'est plus connecté");};
+  el.querySelector(".no").onclick=rcPopHide;el.querySelector(".x").onclick=rcPopHide;
+  // position : au-dessus de l'icône appareils si elle est visible, sinon en bas au centre
+  const fpOpen=$("#nowplaying").classList.contains("show");
+  const anchor=fpOpen?$("#fpDev"):($("#np").classList.contains("up")?$("#devBtn"):null);
+  const w=el.offsetWidth,h=el.offsetHeight;
+  if(anchor&&anchor.getBoundingClientRect().width){
+    const r=anchor.getBoundingClientRect(),cx=r.left+r.width/2;
+    const left=Math.max(12,Math.min(innerWidth-w-12,cx-w/2));
+    el.style.left=left+"px";el.style.top=(r.top-h-12)+"px";el.style.setProperty("--ax",(cx-left)+"px");
+  }else{el.classList.add("noarrow");el.style.left=Math.max(12,(innerWidth-w)/2)+"px";el.style.bottom="max(24px, env(safe-area-inset-bottom))";}
+  requestAnimationFrame(()=>el.classList.add("show"));
+  rcPopT=setTimeout(rcPopHide,12000);
+}
+function rcMaybePop(){
+  if(!rcIsTouch||remote||publicMode)return;
+  const cand=Object.values(rcDevices).filter(d=>d.id!==DEV.id&&!rcPopSeen.has(d.id)&&!d.controlling);
+  if(!cand.length)return;
+  cand.forEach(d=>rcPopSeen.add(d.id));
+  // priorité à un appareil qui joue, sinon un ordinateur
+  const pick=cand.find(d=>d.playing)||cand.find(d=>/Mac|PC|Ordinateur/.test(d.name))||cand[0];
+  setTimeout(()=>{if(!remote&&rcDevices[pick.id])rcPopShow(rcDevices[pick.id]);},1200);
+}
+document.addEventListener("click",e=>{const el=$("#rcpop");if(el&&!el.contains(e.target))rcPopHide();},true);
+$("#devBtn").onclick=e=>{e.stopPropagation();rcPopHide();openDevices($("#devBtn"));};
+$("#fpDev").onclick=e=>{e.stopPropagation();rcPopHide();openDevices($("#fpDev"));};
 
 /* rafraîchir les projets au retour sur la page (après mise en veille, etc.) */
 let lastLoad=Date.now();
