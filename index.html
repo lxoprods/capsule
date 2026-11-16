@@ -1082,17 +1082,34 @@ function mapMxVer(r){return {id:r.id,mixupId:r.mixup_id,name:r.name,storage_path
 async function loadAll(){
   // l'admin peut tout lire : on limite SA bibliothèque perso à ses propres projets
   // (l'onglet Admin montre, lui, tous les artistes).
+  // Robuste : en cas d'échec (réseau pas prêt au réveil, session expirée…) on réessaie,
+  // et on ne vide JAMAIS la bibliothèque déjà affichée.
   const uid=user?user.id:null;
-  const [pr,tr,mx]=await Promise.all([
+  const q=()=>Promise.all([
     sb.from("projects").select("*").eq("user_id",uid).order("position",{ascending:true}),
     sb.from("tracks").select("*").eq("user_id",uid).order("position",{ascending:true}),
     sb.from("mixups").select("*").eq("user_id",uid).order("position",{ascending:true}),
   ]);
-  if(pr.error)toast("Erreur projets : "+pr.error.message);
-  if(tr.error)toast("Erreur pistes : "+tr.error.message);
+  const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error("délai dépassé")),ms))]);
+  let pr,tr,mx,lastErr=null;
+  for(let i=0;i<4;i++){
+    try{
+      [pr,tr,mx]=await withTimeout(q(),12000);
+      if(!pr.error&&!tr.error){lastErr=null;break;}
+      lastErr=pr.error||tr.error;
+      if(/jwt|token|401/i.test(String(lastErr.message||lastErr.code||""))){try{await sb.auth.refreshSession();}catch(e){}}
+    }catch(e){lastErr=e;}
+    await new Promise(r=>setTimeout(r,800*(i+1)));
+  }
+  if(lastErr){
+    if(!state.projects.length)toast("Connexion difficile, nouvel essai dans un instant…");
+    clearTimeout(loadAll._retry);loadAll._retry=setTimeout(()=>{if(user)loadAll().then(render).catch(()=>{});},5000);
+    return false;
+  }
   state.projects=(pr.data||[]).map(mapProject);
   state.tracks=(tr.data||[]).map(mapTrack);
-  state.mixups=(mx&&!mx.error&&mx.data)?mx.data.map(mapMixup):[];
+  state.mixups=(mx&&!mx.error&&mx.data)?mx.data.map(mapMixup):state.mixups;
+  return true;
 }
 const mixup=id=>state.mixups.find(m=>m.id===id);
 
@@ -2905,7 +2922,7 @@ async function handleSession(session){
     if(!booted){booted=true;
       await loadAll();
       state.view="home";
-      state.selected=state.projects[0]?state.projects[0].id:null;
+      if(!state.selected||!state.projects.some(p=>p.id===state.selected))state.selected=state.projects[0]?state.projects[0].id:null;
       render();
       loadNotifs();
       remoteInit();
@@ -3284,7 +3301,8 @@ async function boot(){
   if(sharedMx){publicMode=true;initPublicMixup(sharedMx);return;}
   setAuthMode("login");
   render();
-  sb.auth.onAuthStateChange((_e,session)=>handleSession(session));
+  // setTimeout : ne jamais appeler Supabase directement dans ce rappel (sinon blocage de la session)
+  sb.auth.onAuthStateChange((_e,session)=>{setTimeout(()=>handleSession(session),0);});
   const {data}=await sb.auth.getSession();
   handleSession(data.session);
 }
