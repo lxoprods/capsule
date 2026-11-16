@@ -80,6 +80,15 @@
     box-shadow:0 2px 6px rgba(0,0,0,.4)}
   .pitem .nm{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
   .pitem .ct{font-family:"Space Mono",monospace;font-size:10px;color:var(--muted-2)}
+  .pitem .pmore{flex:none;width:26px;height:26px;margin:-4px -4px -4px 0;border:none;border-radius:7px;background:transparent;
+    color:var(--muted);cursor:pointer;display:none;align-items:center;justify-content:center;padding:0}
+  .pitem .pmore svg{width:16px;height:16px}
+  .pitem .pmore:hover{background:var(--surface-2);color:var(--text,#fff)}
+  .pitem:hover .pmore,.pitem .pmore.open{display:flex}
+  .pitem:hover .ct{display:none}
+  @media (hover:none){.pitem .pmore{display:flex}.pitem .ct{display:none}}
+  .pitem .nmedit{flex:1;min-width:0;font:inherit;font-size:14px;font-weight:500;color:inherit;background:var(--surface-2);
+    border:1px solid var(--accent);border-radius:6px;padding:3px 6px;outline:none}
 
   /* ---------- main ---------- */
   .main{min-width:0;overflow-y:auto;position:relative;padding-bottom:150px;display:flex;flex-direction:column}
@@ -1107,8 +1116,12 @@ function renderLib(){
     const n=state.tracks.filter(t=>t.projectId===p.id).length;
     const el=document.createElement("div");el.className="pitem"+(state.view==="project"&&p.id===state.selected?" active":"");
     el.innerHTML=`<div class="pcover" style="background-image:${coverBg(p)}"></div>
-      <div class="nm">${esc(p.name)}</div><div class="ct">${n}</div>`;
-    el.onclick=()=>{openProject(p.id);closeDrawer();};
+      <div class="nm">${esc(p.name)}</div><div class="ct">${n}</div>
+      <button class="pmore" aria-label="Options du projet"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>`;
+    el.onclick=()=>{if(el.querySelector(".nmedit"))return;openProject(p.id);closeDrawer();};
+    const more=el.querySelector(".pmore");
+    more.onclick=e=>{e.stopPropagation();openLibMenu(more,el,p);};
+    el.oncontextmenu=e=>{e.preventDefault();openLibMenu(more,el,p);};
     // déposer une track sur un projet -> déplacer/copier
     el.addEventListener("dragover",e=>{if(dragId){e.preventDefault();el.classList.add("drop-hi");}});
     el.addEventListener("dragleave",()=>el.classList.remove("drop-hi"));
@@ -1116,6 +1129,34 @@ function renderLib(){
       const t=state.tracks.find(x=>x.id===dragId);if(t&&t.projectId!==p.id)openMove(t,p.id);});
     lib.appendChild(el);
   });
+}
+
+function openLibMenu(anchor,el,p){
+  anchor.classList.add("open");
+  openMenu(anchor,[
+    {icon:IC.rename,label:"Renommer",act:()=>renameProjectInline(el,p)},
+    {icon:IC.rename,label:"Modifier la pochette",act:()=>openProjSheet(p)},
+    {sep:true},
+    {icon:IC.del,label:"Supprimer le projet",danger:true,act:()=>confirmDeleteProject(p)},
+  ]);
+  setTimeout(()=>{const off=()=>{anchor.classList.remove("open");document.removeEventListener("click",off,true);};document.addEventListener("click",off,true);},0);
+}
+function renameProjectInline(el,p){
+  const nm=el.querySelector(".nm");if(!nm)return;
+  const inp=document.createElement("input");inp.className="nmedit";inp.value=p.name;inp.maxLength=80;
+  nm.replaceWith(inp);inp.focus();inp.select();
+  let done=false;
+  const finish=async save=>{
+    if(done)return;done=true;
+    const name=inp.value.trim();
+    if(!save||!name||name===p.name){renderLib();return;}
+    const old=p.name;p.name=name;render();
+    const {error}=await sb.from("projects").update({name}).eq("id",p.id);
+    if(error){p.name=old;render();toast("Erreur : "+error.message);}else toast("Projet renommé");
+  };
+  inp.onclick=e=>e.stopPropagation();
+  inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();finish(true);}else if(e.key==="Escape"){finish(false);}};
+  inp.onblur=()=>finish(true);
 }
 
 /* ---------- main render ---------- */
