@@ -2919,6 +2919,7 @@ async function handleSession(session){
     user=session.user;
     $("#auth").classList.remove("show");
     refreshProfileUI();
+    loadMyRole();
     if(!booted){booted=true;
       await loadAll();
       state.view="home";
@@ -2929,7 +2930,7 @@ async function handleSession(session){
     }
   }else{
     remoteStop();
-    user=null;booted=false;
+    user=null;booted=false;myRole=null;
     state.projects=[];state.tracks=[];current=null;audio.pause();$("#np").classList.remove("up");
     $("#auth").classList.add("show");
     render();
@@ -3112,7 +3113,14 @@ function renderPublicMixup(){
 
 /* ==================== ADMIN (label / pages artistes) ==================== */
 const ADMIN_EMAIL="leo95430@gmail.com";
-function isAdmin(){return !!(user&&(user.email||"").toLowerCase()===ADMIN_EMAIL);}
+// admin = compte propriétaire OU tout compte dont le profil a le rôle "admin" (géré dans Supabase)
+let myRole=null;
+function isAdmin(){return !!(user&&((user.email||"").toLowerCase()===ADMIN_EMAIL||myRole==="admin"));}
+async function loadMyRole(){
+  if(!user)return;
+  try{const {data}=await sb.from("profiles").select("role").eq("id",user.id).maybeSingle();
+    const r=data&&data.role||null;if(r!==myRole){myRole=r;refreshProfileUI();}}catch(e){}
+}
 let adProfiles=[], adProjects=[], adTracks=[], adPlays=[], adLoaded=false;
 
 async function openAdmin(){
@@ -3143,7 +3151,7 @@ function adArtistStats(uid){
 }
 function renderAdmin(){
   $("#crumb").innerHTML="<b>Admin</b>";
-  const artists=adProfiles.filter(p=>(p.email||"").toLowerCase()!==ADMIN_EMAIL);
+  const artists=adProfiles.filter(p=>(p.email||"").toLowerCase()!==ADMIN_EMAIL&&p.role!=="admin");
   const totalPlays=adPlays.length;
   let html=`<div class="greet" style="font-size:26px">Admin — comptes artistes</div>
     <div class="adstats">
